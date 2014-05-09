@@ -1284,7 +1284,7 @@ function template_preprocess_image(&$variables) {
   }
 
   if (isset($variables['srcset'])) {
-    $scrsets = aray();
+    $srcsets = array();
     foreach ($variables['srcset'] as $srcset) {
       // URI is mandatory.
       if (isset($srcset['uri']) && !empty($srcset['uri'])) {
@@ -2567,7 +2567,7 @@ function drupal_common_theme() {
       // - http://dev.w3.org/html5/spec/Overview.html#alt
       // The title attribute is optional in all cases, so it is omitted by
       // default.
-      'variables' => array('uri' => NULL, 'width' => NULL, 'height' => NULL, 'alt' => '', 'title' => NULL, 'attributes' => array(), 'scrset' => array()),
+      'variables' => array('uri' => NULL, 'width' => NULL, 'height' => NULL, 'alt' => '', 'title' => NULL, 'attributes' => array(), 'srcset' => array()),
       'template' => 'image',
     ),
     'breadcrumb' => array(
