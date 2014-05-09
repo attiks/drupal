@@ -1279,7 +1279,9 @@ function template_preprocess_links(&$variables) {
  *   - srcset: Array of multiple URI's and sizes/multipliers.
  */
 function template_preprocess_image(&$variables) {
-  $variables['attributes']['src'] = file_create_url($variables['uri']);
+  if (isset($variables['uri']) && !empty($variables['uri'])) {
+    $variables['attributes']['src'] = file_create_url($variables['uri']);
+  }
 
   if (isset($variables['srcset'])) {
     $scrsets = aray();
