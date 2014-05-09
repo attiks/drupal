@@ -210,6 +210,7 @@ function theme_responsive_image($variables) {
   $sources = array();
   $output = array();
   $image = \Drupal::service('image.factory')->get($variables['uri']);
+  $mime_type = $image->getMimeType();
 
   // All breakpoints and multipliers.
   foreach ($variables['breakpoints'] as $breakpoint_name => $multipliers) {
@@ -217,39 +218,46 @@ function theme_responsive_image($variables) {
     if ($breakpoint) {
       $sizes = array();
       $srcset = array();
-      $derivative_mime_type = FALSE;
+      $derivative_mime_types = array();
       foreach ($multipliers as $multiplier => $mapping_definition) {
         switch ($mapping_definition['mapping_type']) {
           case 'sizes':
             foreach (array_filter($mapping_definition['sizes_image_styles']) as $image_style_name) {
               $image_style = entity_load('image_style', $image_style_name);
+
+              // Get dimensions.
               $dimensions = array('width' => $image->getWidth(), 'height' => $image->getHeight());
               $image_style->transformDimensions($dimensions);
-              if (!$derivative_mime_type) {
-                $derivative_uri = $image_style->buildUri($image->getSource());
-                $derivative = \Drupal::service('image.factory')->get($derivative_uri);
-                $derivative_mime_type = $derivative->getMimeType();
-              }
+
+              // Get mime type.
+              $derivative_mime_type = $mime_type;
+              $image_style->transformMimeType($derivative_mime_type);
+              $derivative_mime_types[] = $derivative_mime_type;
+
               $srcset[] = $image_style->buildUrl($image->getSource()) . ' ' . $dimensions['width'] . 'w';
               $sizes = array_merge(explode(',', $mapping_definition['sizes']), $sizes);
             }
             break;
           case 'image_style':
             $image_style = entity_load('image_style', $mapping_definition['image_style']);
-            if (!$derivative_mime_type) {
-              $derivative_uri = $image_style->buildUri($image->getSource());
-              $derivative = \Drupal::service('image.factory')->get($derivative_uri);
-              $derivative_mime_type = $derivative->getMimeType();
-            }
+
+            // Get mime type.
+            $derivative_mime_type = $mime_type;
+            $image_style->transformMimeType($derivative_mime_type);
+            $derivative_mime_types[] = $derivative_mime_type;
+
             $srcset[] = $image_style->buildUrl($image->getSource()) . ' ' . $multiplier;
             break;
         }
       }
+      // Only add mime type if it is unique.
+      $derivative_mime_types = array_unique($derivative_mime_types);
+
       $sources[] = array(
         '#theme' => 'responsive_image_source',
         '#srcset' => implode(', ', array_unique($srcset)),
         '#media' => $breakpoint->mediaQuery,
-        '#mime_type' => $derivative_mime_type,
+        '#mime_type' => count($derivative_mime_types) == 1 ? reset($derivative_mime_types) : '',
         '#sizes' => implode(',', array_unique($sizes)),
       );
     }
