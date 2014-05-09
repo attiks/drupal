@@ -1284,7 +1284,7 @@ function template_preprocess_image(&$variables) {
   }
 
   if (isset($variables['srcset'])) {
-    $srcsets = aray();
+    $srcsets = array();
     foreach ($variables['srcset'] as $srcset) {
       // URI is mandatory.
       if (isset($srcset['uri']) && !empty($srcset['uri'])) {
