@@ -1276,6 +1276,7 @@ function template_preprocess_links(&$variables) {
  *   - title: The title text is displayed when the image is hovered in some
  *     popular browsers.
  *   - attributes: Associative array of attributes to be placed in the img tag.
+ *   - srcset: Array of multiple URI's and sizes/multipliers.
  */
 function template_preprocess_image(&$variables) {
   $variables['attributes']['src'] = file_create_url($variables['uri']);
@@ -1283,8 +1284,18 @@ function template_preprocess_image(&$variables) {
   if (isset($variables['srcset'])) {
     $scrsets = aray();
     foreach ($variables['srcset'] as $srcset) {
-      $srcset['src'] = file_create_url($srcset['src']);
-      $scrsets[] = $srcset['src'] . ' ' . $srcset['width'];
+      // URI is mandatory.
+      if (isset($srcset['uri']) && !empty($srcset['uri'])) {
+        $srcset['src'] = file_create_url($srcset['uri']);
+        $new_source = $srcset['src'];
+        if (isset($srcset['width']) && !empty($srcset['width'])) {
+          $new_source .= ' ' . $srcset['width'];
+        }
+        elseif (isset($srcset['multiplier']) && !empty($srcset['multiplier'])) {
+          $new_source .= ' ' . $srcset['multiplier'];
+        }
+        $srcsets[] = $new_source;
+      }
     }
     $variables['attributes']['srcset'] = implode(', ', $srcsets);
   }
