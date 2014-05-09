@@ -1283,7 +1283,7 @@ function template_preprocess_image(&$variables) {
     $variables['attributes']['src'] = file_create_url($variables['uri']);
   }
 
-  if (isset($variables['srcset'])) {
+  if (isset($variables['srcset']) && !empty(isset($variables['srcset']))) {
     $srcsets = array();
     foreach ($variables['srcset'] as $srcset) {
       // URI is mandatory.

@@ -44,6 +44,12 @@ class ScaleImageEffect extends ResizeImageEffect {
   /**
    * {@inheritdoc}
    */
+  public function transformMimeType(&$mime_type) {
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getSummary() {
     return array(
       '#theme' => 'image_scale_summary',
