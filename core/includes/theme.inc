@@ -1280,6 +1280,15 @@ function template_preprocess_links(&$variables) {
 function template_preprocess_image(&$variables) {
   $variables['attributes']['src'] = file_create_url($variables['uri']);
 
+  if (isset($variables['srcset'])) {
+    $scrsets = aray();
+    foreach ($variables['srcset'] as $srcset) {
+      $srcset['src'] = file_create_url($srcset['src']);
+      $scrsets[] = $srcset['src'] . ' ' . $srcset['width'];
+    }
+    $variables['attributes']['srcset'] = implode(', ', $srcsets);
+  }
+
   foreach (array('width', 'height', 'alt', 'title') as $key) {
     if (isset($variables[$key])) {
       $variables['attributes'][$key] = $variables[$key];
