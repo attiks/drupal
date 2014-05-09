@@ -45,6 +45,12 @@ class ResizeImageEffect extends ImageEffectBase implements ConfigurableImageEffe
   /**
    * {@inheritdoc}
    */
+  public function transformMimeType(&$mime_type) {
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getSummary() {
     return array(
       '#theme' => 'image_resize_summary',
