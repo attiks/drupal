@@ -61,4 +61,14 @@ interface ResponsiveImageMappingInterface extends ConfigEntityInterface {
    */
   public function getBreakpointGroup();
 
+  /**
+   * Checks if the mapping definition is empty.
+   *
+   * @param array $mapping_definition
+   *   The mapping definition to check.
+   * @return bool
+   *   Whether the mapping definition is considered empty or not.
+   */
+  public static function isEmptyMappingDefinition($mapping_definition);
+
 }

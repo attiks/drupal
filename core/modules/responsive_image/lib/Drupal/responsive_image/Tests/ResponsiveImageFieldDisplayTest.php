@@ -91,9 +91,27 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     ));
     $responsive_image_mapping->save();
     $mappings = array();
-    $mappings['custom.user.small']['1x'] = 'thumbnail';
-    $mappings['custom.user.medium']['1x'] = 'medium';
-    $mappings['custom.user.large']['1x'] = 'large';
+    $mappings['custom.user.small']['1x'] = array(
+      'mapping_type' => 'image_style',
+      'image_style' => 'thumbnail',
+      'sizes' => '',
+      'sizes_image_styles' => array(),
+    );
+    $mappings['custom.user.medium']['1x'] = array(
+      'mapping_type' => 'sizes',
+      'image_style' => '',
+      'sizes' => '(min-width: 700px) 700px, 100vw',
+      'sizes_image_styles' => array(
+        'large' => 'large',
+        'medium' => 'medium',
+      ),
+    );
+    $mappings['custom.user.large']['1x'] = array(
+      'mapping_type' => 'image_style',
+      'image_style' => 'large',
+      'sizes' => '',
+      'sizes_image_styles' => array(),
+    );
     $responsive_image_mapping->setMappings($mappings);
     $responsive_image_mapping->save();
   }
@@ -183,6 +201,10 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     $display->setComponent($field_name, $display_options)
       ->save();
 
+    // Create a derivative so at least one MIME-type will be known.
+    $large_style = entity_load('image_style', 'large');
+    $large_style->createDerivative($image_uri, $large_style->buildUri($image_uri));
+
     // Output should contain all image styles and all breakpoints.
     $this->drupalGet('node/' . $nid);
     $this->assertRaw('/styles/thumbnail/');
@@ -191,6 +213,9 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     $this->assertRaw('media="(min-width: 200px)"');
     $this->assertRaw('media="(min-width: 400px)"');
     $this->assertRaw('media="(min-width: 600px)"');
+    $this->assertRaw('sizes="(min-width: 700px) 700px, 100vw"');
+    // Check for the MIME-type.
+    $this->assertRaw('type="image/png"');
     $cache_tags = explode(' ', $this->drupalGetHeader('X-Drupal-Cache-Tags'));
     $this->assertTrue(in_array('responsive_image_mapping:mapping_one', $cache_tags));
     $this->assertTrue(in_array('image_style:thumbnail', $cache_tags));
@@ -198,14 +223,20 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     $this->assertTrue(in_array('image_style:large', $cache_tags));
 
     // Test the fallback image style.
-    $large_style = entity_load('image_style', 'large');
+    $image = \Drupal::service('image.factory')->get($image_uri);
+    $dimensions = array('width' => $image->getWidth(), 'height' => $image->getHeight());
+    $large_style->transformDimensions($dimensions);
     $fallback_image = array(
-      '#theme' => 'responsive_image_source',
-      '#src' => $large_style->buildUrl($image_uri),
-      '#dimensions' => array('width' => 480, 'height' => 240),
+      '#theme' => 'image',
+      '#srcset' => array(
+        array(
+          'uri' => $large_style->buildUrl($image->getSource()),
+          'width' => $dimensions['width'],
+        ),
+      ),
     );
     $default_output = drupal_render($fallback_image);
-    $this->assertRaw($default_output, 'Image style thumbnail formatter displaying correctly on full node view.');
+    $this->assertRaw($default_output/*, 'Image style thumbnail formatter displaying correctly on full node view.'*/);
 
     if ($scheme == 'private') {
       // Log out and try to access the file.

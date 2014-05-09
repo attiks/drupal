@@ -178,7 +178,11 @@ class Breakpoint extends ConfigEntityBase implements BreakpointInterface {
     if (preg_match('/[^0-9a-z_\-]/', $this->name)) {
       throw new InvalidBreakpointNameException(format_string("Invalid value '@name' for breakpoint name property. Breakpoint name property can only contain lowercase alphanumeric characters, underscores (_), and hyphens (-).", array('@name' => $this->name)));
     }
-    return $this::isValidMediaQuery($this->mediaQuery);
+    // Skip the empty media query provided by the breakpoint module.
+    if ($this->id != 'module.breakpoint._none') {
+      return $this::isValidMediaQuery($this->mediaQuery);
+    }
+    return TRUE;
   }
 
   /**

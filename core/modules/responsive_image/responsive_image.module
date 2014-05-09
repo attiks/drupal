@@ -115,10 +115,10 @@ function responsive_image_theme() {
     ),
     'responsive_image_source' => array(
       'variables' => array(
-        'src' => NULL,
         'srcset' => NULL,
-        'dimensions' => NULL,
         'media' => NULL,
+        'mime_type' => NULL,
+        'sizes' => NULL,
       ),
     ),
   );
@@ -209,67 +209,77 @@ function theme_responsive_image($variables) {
 
   $sources = array();
   $output = array();
-
-  // Fallback image, output as source with media query.
-  $sources[] = array(
-    'src' => entity_load('image_style', $variables['style_name'])->buildUrl($variables['uri']),
-    'dimensions' => responsive_image_get_image_dimensions($variables),
-  );
+  $image = \Drupal::service('image.factory')->get($variables['uri']);
 
   // All breakpoints and multipliers.
   foreach ($variables['breakpoints'] as $breakpoint_name => $multipliers) {
     $breakpoint = breakpoint_load($breakpoint_name);
     if ($breakpoint) {
-      $new_sources = array();
-      foreach ($multipliers as $multiplier => $image_style) {
-        $new_source = $variables;
-        $new_source['style_name'] = $image_style;
-        $new_source['#multiplier'] = $multiplier;
-        $new_sources[] = $new_source;
-      }
-
-      // Only one image, use src.
-      if (count($new_sources) == 1) {
-        $sources[] = array(
-          'src' => entity_load('image_style', $new_sources[0]['style_name'])->buildUrl($new_sources[0]['uri']),
-          'dimensions' => responsive_image_get_image_dimensions($new_sources[0]),
-          'media' => $breakpoint->mediaQuery,
-        );
-      }
-      else {
-        // Multiple images, use srcset.
-        $srcset = array();
-        foreach ($new_sources as $new_source) {
-          $srcset[] = entity_load('image_style', $new_source['style_name'])->buildUrl($new_source['uri']) . ' ' . $new_source['#multiplier'];
+      $sizes = array();
+      $srcset = array();
+      $derivative_mime_type = FALSE;
+      foreach ($multipliers as $multiplier => $mapping_definition) {
+        switch ($mapping_definition['mapping_type']) {
+          case 'sizes':
+            foreach (array_filter($mapping_definition['sizes_image_styles']) as $image_style_name) {
+              $image_style = entity_load('image_style', $image_style_name);
+              $dimensions = array('width' => $image->getWidth(), 'height' => $image->getHeight());
+              $image_style->transformDimensions($dimensions);
+              if (!$derivative_mime_type) {
+                $derivative_uri = $image_style->buildUri($image->getSource());
+                $derivative = \Drupal::service('image.factory')->get($derivative_uri);
+                $derivative_mime_type = $derivative->getMimeType();
+              }
+              $srcset[] = $image_style->buildUrl($image->getSource()) . ' ' . $dimensions['width'] . 'w';
+              $sizes = array_merge(explode(',', $mapping_definition['sizes']), $sizes);
+            }
+            break;
+          case 'image_style':
+            $image_style = entity_load('image_style', $mapping_definition['image_style']);
+            if (!$derivative_mime_type) {
+              $derivative_uri = $image_style->buildUri($image->getSource());
+              $derivative = \Drupal::service('image.factory')->get($derivative_uri);
+              $derivative_mime_type = $derivative->getMimeType();
+            }
+            $srcset[] = $image_style->buildUrl($image->getSource()) . ' ' . $multiplier;
+            break;
         }
-        $sources[] = array(
-          'srcset' => implode(', ', $srcset),
-          'dimensions' => responsive_image_get_image_dimensions($new_sources[0]),
-          'media' => $breakpoint->mediaQuery,
-        );
       }
+      $sources[] = array(
+        '#theme' => 'responsive_image_source',
+        '#srcset' => implode(', ', array_unique($srcset)),
+        '#media' => $breakpoint->mediaQuery,
+        '#mime_type' => $derivative_mime_type,
+        '#sizes' => implode(',', array_unique($sizes)),
+      );
     }
   }
 
   if (!empty($sources)) {
     $output[] = '<picture>';
+    $output = array_merge($output, array_map('drupal_render', $sources));
+    // Output the fallback image.
+    $fallback_image_style = entity_load('image_style', $variables['style_name']);
+    $dimensions = array('width' => $image->getWidth(), 'height' => $image->getHeight());
+    $fallback_image_style->transformDimensions($dimensions);
 
-    // Add source tags to the output.
-    foreach ($sources as $source) {
-      $responsive_image_source = array(
-        '#theme' => 'responsive_image_source',
-        '#src' => $source['src'],
-        '#dimensions' => $source['dimensions'],
-      );
-      if (isset($source['media'])) {
-        $responsive_image_source['#media'] = $source['media'];
+    // Use srcset in the fallback image to avoid unnecessary preloading of
+    // images in older browsers.
+    $fallback_image = array(
+      '#theme' => 'image',
+      '#srcset' => array(
+        array(
+          'uri' => $fallback_image_style->buildUrl($image->getSource()),
+          'width' => $dimensions['width'],
+        ),
+      ),
+    );
+    foreach (array('alt', 'title', 'attributes') as $key) {
+      if (isset($variables[$key])) {
+        $fallback_image["#$key"] = $variables[$key];
       }
-      if (isset($source['srcset'])) {
-        $responsive_image_source['#srcset'] = $source['srcset'];
-      }
-      $output[] = drupal_render($responsive_image_source);
     }
-
+    $output[] = drupal_render($fallback_image);
     $output[] = '</picture>';
     return implode("\n", $output);
   }
@@ -285,50 +295,23 @@ function theme_responsive_image($variables) {
  *     URL and optionally multipliers.
  *   - src: Either the path of the image file (relative to base_path()) or a
  *     full URL.
- *   - dimensions: The width and height of the image (if known).
  *
  * @ingroup themeable
  */
 function theme_responsive_image_source($variables) {
-  $output = array();
-  if (isset($variables['media']) && !empty($variables['media'])) {
-    if (!isset($variables['srcset'])) {
-      $output[] = '<!-- <source media="' . $variables['media'] . '" src="' . $variables['src'] . '" ' . new Attribute($variables['dimensions']) . ' /> -->';
-      $output[] = '<source media="' . $variables['media'] . '" src="' . $variables['src'] . '" ' . new Attribute($variables['dimensions']) . '/>';
-    }
-    elseif (!isset($variables['src'])) {
-      $output[] = '<!-- <source media="' . $variables['media'] . '" srcset="' . $variables['srcset'] . '" ' . new Attribute($variables['dimensions']) . ' /> -->';
-      $output[] = '<source media="' . $variables['media'] . '" srcset="' . $variables['srcset'] . '" ' . new Attribute($variables['dimensions']) . ' />';
-    }
-  }
-  else {
-    $output[] = '<!-- <source src="' . $variables['src'] . '" ' . new Attribute($variables['dimensions']) . ' /> -->';
-    $output[] = '<source src="' . $variables['src'] . '" ' . new Attribute($variables['dimensions']) . '/>';
-  }
-  return implode("\n", $output);
-}
-
-/**
- * Determines the dimensions of an image.
- *
- * @param $variables
- *   An associative array containing:
- *   - style_name: The name of the style to be used to alter the original image.
- *   - width: The width of the source image (if known).
- *   - height: The height of the source image (if known).
- *
- * @return array
- *   Dimensions to be modified - an array with components width and height, in
- *   pixels.
- */
-function responsive_image_get_image_dimensions($variables) {
-  // Determine the dimensions of the styled image.
-  $dimensions = array(
-    'width' => $variables['width'],
-    'height' => $variables['height'],
+  $attributes = array(
+    'srcset' => $variables['srcset'],
   );
 
-  entity_load('image_style', $variables['style_name'])->transformDimensions($dimensions);
+  if (isset($variables['media']) && !empty($variables['media'])) {
+    $attributes['media'] = $variables['media'];
+  }
 
-  return $dimensions;
+  if (isset($variables['mime_type']) && !empty($variables['mime_type'])) {
+    $attributes['type'] = $variables['mime_type'];
+  }
+  if (isset($variables['sizes']) && !empty($variables['sizes'])) {
+    $attributes['sizes'] = $variables['sizes'];
+  }
+  return '<source' . new Attribute($attributes) . ' />';
 }

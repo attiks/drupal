@@ -4,7 +4,7 @@ label: tv
 mediaQuery: 'only screen and (min-width: 3456px)'
 source: breakpoint_test_theme
 sourceType: theme
-weight: 3
+weight: 0
 multipliers:
   1x: 1x
 status: true

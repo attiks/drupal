@@ -1,0 +1,11 @@
+id: module.breakpoint._none
+name: _none
+label: None (empty media query)
+mediaQuery: ''
+source: breakpoint
+sourceType: module
+weight: 99
+multipliers:
+  1x: 1x
+status: true
+langcode: en

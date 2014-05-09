@@ -133,6 +133,7 @@ class ResponsiveImageFormatter extends ImageFormatterBase {
 
     $breakpoint_styles = array();
     $fallback_image_style = '';
+    $image_styles = array();
 
     $responsive_image_mapping = entity_load('responsive_image_mapping', $this->getSetting('responsive_image_mapping'));
     if ($responsive_image_mapping) {
@@ -142,21 +143,24 @@ class ResponsiveImageFormatter extends ImageFormatterBase {
           // Make sure that the breakpoint exists and is enabled.
           // @todo add the following when breakpoint->status is added again:
           // $responsive_image_mapping->breakpointGroup->breakpoints[$breakpoint_name]->status
-          $breakpoint = $responsive_image_mapping->getBreakpointGroup()->getBreakpointById($breakpoint_name);
+          $breakpoint = entity_load('breakpoint', $breakpoint_name);
           if ($breakpoint) {
             // Determine the enabled multipliers.
             $multipliers = array_intersect_key($multipliers, $breakpoint->multipliers);
-            foreach ($multipliers as $multiplier => $image_style) {
+            foreach ($multipliers as $multiplier => $mapping_definition) {
               // Make sure the multiplier still exists.
-              if (!empty($image_style)) {
-                // First mapping found is used as fallback.
-                if (empty($fallback_image_style)) {
-                  $fallback_image_style = $image_style;
+              if (!$responsive_image_mapping::isEmptyMappingDefinition($mapping_definition)) {
+                $mapping_definition['sizes_image_styles'] = array_filter($mapping_definition['sizes_image_styles']);
+                if ($mapping_definition['mapping_type'] == 'image_style') {
+                  $image_styles[] = $mapping_definition['image_style'];
+                }
+                else {
+                  $image_styles = array_merge($image_styles, $mapping_definition['sizes_image_styles']);
                 }
                 if (!isset($breakpoint_styles[$breakpoint_name])) {
                   $breakpoint_styles[$breakpoint_name] = array();
                 }
-                $breakpoint_styles[$breakpoint_name][$multiplier] = $image_style;
+                $breakpoint_styles[$breakpoint_name][$multiplier] = $mapping_definition;
               }
             }
           }
@@ -168,15 +172,28 @@ class ResponsiveImageFormatter extends ImageFormatterBase {
     if ($this->getSetting('fallback_image_style')) {
       $fallback_image_style = $this->getSetting('fallback_image_style');
     }
+    else {
+      $fallback_image_style = end($image_styles);
+    }
 
     // Collect cache tags to be added for each item in the field.
     $all_cache_tags = array();
     if ($responsive_image_mapping) {
       $all_cache_tags[] = $responsive_image_mapping->getCacheTag();
-      foreach ($breakpoint_styles as $breakpoint_name => $style_per_multiplier) {
-        foreach ($style_per_multiplier as $multiplier => $image_style_name) {
-          $image_style = entity_load('image_style', $image_style_name);
-          $all_cache_tags[] = $image_style->getCacheTag();
+      foreach ($breakpoint_styles as $breakpoint_name => $mapping_definition_per_multiplier) {
+        foreach ($mapping_definition_per_multiplier as $multiplier => $mapping_definition) {
+          switch ($mapping_definition['mapping_type']) {
+            case 'image_style':
+              $image_style = entity_load('image_style', $mapping_definition['image_style']);
+              $all_cache_tags[] = $image_style->getCacheTag();
+              break;
+            case 'sizes':
+              foreach (array_filter($mapping_definition['sizes_image_styles']) as $image_style_name) {
+                $image_style = entity_load('image_style', $image_style_name);
+                $all_cache_tags[] = $image_style->getCacheTag();
+              }
+              break;
+          }
         }
       }
     }
