@@ -4,7 +4,7 @@ label: wide
 mediaQuery: 'all and (min-width: 851px)'
 source: bartik
 sourceType: theme
-weight: 2
+weight: 0
 multipliers:
   1x: 1x
 status: true

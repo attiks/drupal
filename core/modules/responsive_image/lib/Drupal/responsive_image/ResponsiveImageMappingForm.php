@@ -8,6 +8,7 @@
 namespace Drupal\responsive_image;
 
 use Drupal\Core\Entity\EntityForm;
+use \Drupal\Component\Utility\String;
 
 /**
  * Form controller for the responsive image edit/add forms.
@@ -73,16 +74,58 @@ class ResponsiveImageMappingForm extends EntityForm {
 
     $image_styles = image_style_options(TRUE);
     foreach ($responsive_image_mapping->getMappings() as $breakpoint_id => $mapping) {
-      foreach ($mapping as $multiplier => $image_style) {
-        $breakpoint = $responsive_image_mapping->getBreakpointGroup()->getBreakpointById($breakpoint_id);
-        $label = $multiplier . ' ' . $breakpoint->name . ' [' . $breakpoint->mediaQuery . ']';
+      foreach ($mapping as $multiplier => $mapping_definition) {
+        $breakpoint = entity_load('breakpoint', $breakpoint_id);
+        $label = $multiplier . ' ' . $breakpoint->label . ' [' . $breakpoint->mediaQuery . ']';
         $form['mappings'][$breakpoint_id][$multiplier] = array(
-          '#type' => 'select',
-          '#title' => check_plain($label),
-          '#options' => $image_styles,
-          '#default_value' => $image_style,
-          '#description' => $this->t('Select an image style for this breakpoint.'),
+          '#type' => 'details',
+          '#title' => String::checkPlain($label),
         );
+        $form['mappings'][$breakpoint_id][$multiplier]['mapping_type'] = array(
+          '#title' => t('Type'),
+          '#type' => 'radios',
+          '#options' => array(
+            '' => t('Do not use this breakpoint'),
+            'image_style' => t('Use image styles'),
+            'sizes' => t('Use the sizes attribute'),
+          ),
+          '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '',
+        );
+        $form['mappings'][$breakpoint_id][$multiplier]['image_style'] = array(
+          '#type' => 'select',
+          '#title' => t('Image style'),
+          '#options' => $image_styles,
+          '#default_value' => isset($mapping_definition['image_style']) ? $mapping_definition['image_style'] : array(),
+          '#description' => $this->t('Select an image style for this breakpoint.'),
+          '#states' => array(
+            'visible' => array(
+              ':input[name="mappings[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'image_style'),
+            ),
+          ),
+        );
+        $form['mappings'][$breakpoint_id][$multiplier]['sizes'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Sizes'),
+          '#default_value' => isset($mapping_definition['sizes']) ? $mapping_definition['sizes'] : '',
+          '#description' => $this->t('Enter the value for the sizes attribute (e.g. "(min-width:700px) 700px, 100vw").'),
+          '#states' => array(
+            'visible' => array(
+              ':input[name="mappings[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'sizes'),
+            ),
+          ),
+        );
+        $form['mappings'][$breakpoint_id][$multiplier]['sizes_image_styles'] = array(
+          '#title' => t('Image styles'),
+          '#type' => 'checkboxes',
+          '#options' => array_diff_key($image_styles, array('' => '')),
+          '#default_value' => isset($mapping_definition['sizes_image_styles']) ? $mapping_definition['sizes_image_styles'] : array(),
+          '#states' => array(
+            'visible' => array(
+              ':input[name="mappings[' . $breakpoint_id . '][' . $multiplier . '][mapping_type]"]' => array('value' => 'sizes'),
+            ),
+          ),
+        );
+
       }
     }
 

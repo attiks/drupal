@@ -4,7 +4,7 @@ label: narrow
 mediaQuery: '(min-width: 560px)'
 source: breakpoint_test_theme
 sourceType: theme
-weight: 1
+weight: 2
 multipliers:
   1x: 1x
 status: true

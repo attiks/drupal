@@ -197,6 +197,7 @@ class BreakpointGroup extends ConfigEntityBase implements BreakpointGroupInterfa
         }
       }
     }
+    uasort($this->breakpoints, array('\Drupal\breakpoint\Entity\Breakpoint', 'sort'));
     return $this->breakpoints;
   }
 

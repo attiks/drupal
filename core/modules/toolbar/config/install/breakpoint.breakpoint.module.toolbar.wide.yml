@@ -4,7 +4,7 @@ label: wide
 mediaQuery: 'only screen and (min-width: 52em)'
 source: toolbar
 sourceType: module
-weight: 2
+weight: 0
 multipliers:
   1x: 1x
 status: true

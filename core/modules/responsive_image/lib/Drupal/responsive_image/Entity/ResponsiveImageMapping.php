@@ -143,8 +143,12 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
   protected function loadAllMappings() {
     $loaded_mappings = $this->getMappings();
     $all_mappings = array();
+    $empty_breakpoint = entity_load('breakpoint', 'module.breakpoint._none');
     if ($breakpoint_group = $this->getBreakpointGroup()) {
-      foreach ($breakpoint_group->getBreakpoints() as $breakpoint_id => $breakpoint) {
+      $breakpoints = $breakpoint_group->getBreakpoints() + array(
+        $empty_breakpoint->id() => $empty_breakpoint
+      );
+      foreach ($breakpoints as $breakpoint_id => $breakpoint) {
         // Get the components of the breakpoint ID to match the format of the
         // configuration file.
         list($source_type, $source, $name) = explode('.', $breakpoint_id);
@@ -177,13 +181,35 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
   public function hasMappings() {
     $mapping_found = FALSE;
     foreach ($this->getMappings() as $multipliers) {
-      $filtered_array = array_filter($multipliers);
-      if (!empty($filtered_array)) {
-        $mapping_found = TRUE;
-        break;
+      foreach ($multipliers as $mapping_definition) {
+        if (!$this::isEmptyMappingDefinition($mapping_definition)) {
+          $mapping_found = TRUE;
+          break 2;
+        }
       }
     }
     return $mapping_found;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function isEmptyMappingDefinition($mapping_definition) {
+    if (!empty($mapping_definition)) {
+      switch ($mapping_definition['mapping_type']) {
+        case 'sizes':
+          if ($mapping_definition['sizes'] && array_filter($mapping_definition['sizes_image_styles'])) {
+            return FALSE;
+          }
+          break;
+        case 'image_style':
+          if ($mapping_definition['image_style']) {
+            return FALSE;
+          }
+          break;
+      }
+    }
+    return TRUE;
   }
 
   /**

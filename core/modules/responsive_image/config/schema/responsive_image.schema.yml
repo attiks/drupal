@@ -26,8 +26,24 @@ responsive_image.mappings.*:
                 - type: sequence
                   label: 'Machine name'
                   sequence:
-                    - type: string
-                      label: 'Image style'
+                    - type: mapping
+                      label: 'Mapping definition'
+                      mapping:
+                        mapping_type:
+                          type: string
+                          label: 'Type'
+                        image_style:
+                          type: string
+                          label: 'Image style'
+                        sizes:
+                          type: string
+                          label: 'Sizes'
+                        sizes_image_styles:
+                          type: sequence
+                          label: 'Image styles'
+                          sequence:
+                            - type: string
+                              label: 'Image style'
     breakpointGroup:
       type: string
       label: 'Breakpoint group'

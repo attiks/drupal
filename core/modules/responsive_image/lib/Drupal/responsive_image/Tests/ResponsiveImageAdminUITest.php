@@ -112,30 +112,71 @@ class ResponsiveImageAdminUITest extends WebTestBase {
     $this->assertFieldByName('label', 'Mapping One');
     $this->assertFieldByName('breakpointGroup', $this->breakpointGroup->id());
 
-    // Check if the dropdows are present for the mappings.
-    $this->assertFieldByName('mappings[custom.user.small][1x]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x]', '');
-    $this->assertFieldByName('mappings[custom.user.large][1x]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x]', '');
+    // Check if the radio buttons are present.
+    $this->assertFieldByName('mappings[custom.user.small][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.large][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '');
+
+    // Check if the image style dropdowns are present.
+    $this->assertFieldByName('mappings[custom.user.small][1x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.small][2x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.large][1x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.large][2x][image_style]', '');
+
+    // Check if the sizes textfields are present.
+    $this->assertFieldByName('mappings[custom.user.small][1x][sizes]', '');
+    $this->assertFieldByName('mappings[custom.user.small][2x][sizes]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][sizes]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][sizes]', '');
+    $this->assertFieldByName('mappings[custom.user.large][1x][sizes]', '');
+    $this->assertFieldByName('mappings[custom.user.large][2x][sizes]', '');
+
+    // Check if the image styles checkboxes are present.
+    foreach (array_keys(image_style_options(FALSE)) as $image_style_name) {
+      $this->assertFieldByName('mappings[custom.user.small][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[custom.user.small][2x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[custom.user.medium][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[custom.user.medium][2x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[custom.user.large][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[custom.user.large][2x][sizes_image_styles][' . $image_style_name . ']');
+    }
 
     // Save mappings for 1x variant only.
     $edit = array(
       'label' => 'Mapping One',
       'breakpointGroup' => $this->breakpointGroup->id(),
-      'mappings[custom.user.small][1x]' => 'thumbnail',
-      'mappings[custom.user.medium][1x]' => 'medium',
-      'mappings[custom.user.large][1x]' => 'large',
+      'mappings[custom.user.small][1x][mapping_type]' => 'image_style',
+      'mappings[custom.user.small][1x][image_style]' => 'thumbnail',
+      'mappings[custom.user.medium][1x][mapping_type]' => 'sizes',
+      'mappings[custom.user.medium][1x][sizes]' => '(min-width: 700px) 700px, 100vw',
+      'mappings[custom.user.medium][1x][sizes_image_styles][large]' => 'large',
+      'mappings[custom.user.medium][1x][sizes_image_styles][medium]' => 'medium',
+      'mappings[custom.user.large][1x][mapping_type]' => 'image_style',
+      'mappings[custom.user.large][1x][image_style]' => 'large',
     );
     $this->drupalPostForm('admin/config/media/responsive-image-mapping/mapping_one', $edit, t('Save'));
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one');
-    $this->assertFieldByName('mappings[custom.user.small][1x]', 'thumbnail');
-    $this->assertFieldByName('mappings[custom.user.small][2x]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x]', 'medium');
-    $this->assertFieldByName('mappings[custom.user.medium][2x]', '');
-    $this->assertFieldByName('mappings[custom.user.large][1x]', 'large');
-    $this->assertFieldByName('mappings[custom.user.large][2x]', '');
+    $this->assertFieldByName('mappings[custom.user.small][1x][image_style]', 'thumbnail');
+    $this->assertFieldByName('mappings[custom.user.small][1x][mapping_type]', 'image_style');
+    $this->assertFieldByName('mappings[custom.user.small][2x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][mapping_type]', 'sizes');
+    $this->assertFieldByName('mappings[custom.user.medium][1x][sizes]', '(min-width: 700px) 700px, 100vw');
+    $this->assertFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-large');
+    $this->assertFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-medium');
+    $this->assertNoFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-thumbnail');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.large][1x][image_style]', 'large');
+    $this->assertFieldByName('mappings[custom.user.large][1x][mapping_type]', 'image_style');
+    $this->assertFieldByName('mappings[custom.user.large][2x][image_style]', '');
+    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '');
 
     // Delete the mapping.
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one/delete');
