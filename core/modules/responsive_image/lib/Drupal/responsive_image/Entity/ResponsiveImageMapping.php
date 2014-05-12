@@ -143,11 +143,8 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
   protected function loadAllMappings() {
     $loaded_mappings = $this->getMappings();
     $all_mappings = array();
-    $empty_breakpoint = entity_load('breakpoint', 'module.breakpoint._none');
     if ($breakpoint_group = $this->getBreakpointGroup()) {
-      $breakpoints = $breakpoint_group->getBreakpoints() + array(
-        $empty_breakpoint->id() => $empty_breakpoint
-      );
+      $breakpoints = $breakpoint_group->getBreakpoints();
       foreach ($breakpoints as $breakpoint_id => $breakpoint) {
         // Get the components of the breakpoint ID to match the format of the
         // configuration file.

@@ -5,6 +5,7 @@ breakpoint_ids:
   - module.toolbar.narrow
   - module.toolbar.standard
   - module.toolbar.wide
+  - module.breakpoint._none
 source: toolbar
 sourceType: module
 status: true
