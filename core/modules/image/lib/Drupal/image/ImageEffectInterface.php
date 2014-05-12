@@ -37,6 +37,14 @@ interface ImageEffectInterface extends PluginInspectionInterface, ConfigurablePl
   public function transformDimensions(array &$dimensions);
 
   /**
+   * Determines the mime type of the styled image.
+   *
+   * @param string $mime_type
+   *   Mime type to be modified.
+   */
+  public function transformMimeType(&$mime_type);
+
+  /**
    * Returns a render array summarizing the configuration of the image effect.
    *
    * @return array

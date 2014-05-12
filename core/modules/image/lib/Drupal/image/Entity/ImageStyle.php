@@ -312,6 +312,15 @@ class ImageStyle extends ConfigEntityBase implements ImageStyleInterface, Entity
   /**
    * {@inheritdoc}
    */
+  public function transformMimeType(&$mime_type) {
+    foreach ($this->getEffects() as $effect) {
+      $effect->transformMimeType($mime_type);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getPathToken($uri) {
     // Return the first 8 characters.
     return substr(Crypt::hmacBase64($this->id() . ':' . $uri, \Drupal::service('private_key')->get() . drupal_get_hash_salt()), 0, 8);
