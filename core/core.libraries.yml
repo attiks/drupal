@@ -678,9 +678,7 @@ normalize:
 
 picturefill:
   remote: https://github.com/scottjehl/picturefill
-  # @todo Contribute upstream and/or replace with upstream version.
-  # @see https://drupal.org/node/1775530
-  version: VERSION
+  version: 2.0.0
   js:
     assets/vendor/picturefill/picturefill.js: { weight: -10 }
   dependencies:

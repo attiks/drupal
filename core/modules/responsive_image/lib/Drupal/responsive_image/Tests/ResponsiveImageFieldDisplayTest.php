@@ -81,6 +81,19 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
       $breakpoint->save();
       $breakpoint_group->addBreakpoints(array($breakpoint));
     }
+    // Empty breakpoint
+    $breakpoint = entity_create('breakpoint', array(
+      'name' => 'none',
+      'mediaQuery' => '',
+      'source' => 'user',
+      'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
+      'multipliers' => array(
+        '1.5x' => 0,
+        '2x' => '2x',
+      ),
+    ));
+    $breakpoint->save();
+    $breakpoint_group->addBreakpoints(array($breakpoint));
     $breakpoint_group->save();
 
     // Add responsive image mapping.
@@ -111,6 +124,16 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
       'image_style' => 'large',
       'sizes' => '',
       'sizes_image_styles' => array(),
+    );
+    $mappings['custom.user.none']['1x'] = array(
+      'mapping_type' => 'sizes',
+      'image_style' => '',
+      'sizes' => '(min-width: 500px) 500px, 100vw',
+      'sizes_image_styles' => array(
+        'large' => 'large',
+        'medium' => 'medium',
+        'thumbnail' => 'thumbnail',
+      ),
     );
     $responsive_image_mapping->setMappings($mappings);
     $responsive_image_mapping->save();
@@ -212,10 +235,15 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     $this->assertRaw('/styles/large/');
     $this->assertRaw('media="(min-width: 200px)"');
     $this->assertRaw('media="(min-width: 400px)"');
-    $this->assertRaw('media="(min-width: 600px)"');
     $this->assertRaw('sizes="(min-width: 700px) 700px, 100vw"');
+    $this->assertPattern('/media="\(min-width: 400px\)".+?sizes="\(min-width: 700px\) 700px, 100vw"/');
+    $this->assertRaw('media="(min-width: 600px)"');
+    // Make sure the empty breakpoint mapping doesn't have a media attribute.
+    $this->assertNoPattern('/media="[^"]*".+?sizes="\(min-width: 500px\) 500px, 100vw"/');
+    $this->assertRaw('sizes="(min-width: 500px) 500px, 100vw"');
     // Check for the MIME-type.
     $this->assertRaw('type="image/png"');
+
     $cache_tags = explode(' ', $this->drupalGetHeader('X-Drupal-Cache-Tags'));
     $this->assertTrue(in_array('responsive_image_mapping:mapping_one', $cache_tags));
     $this->assertTrue(in_array('image_style:thumbnail', $cache_tags));
@@ -236,7 +264,7 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
       ),
     );
     $default_output = drupal_render($fallback_image);
-    $this->assertRaw($default_output/*, 'Image style thumbnail formatter displaying correctly on full node view.'*/);
+    $this->assertRaw($default_output, 'Image style thumbnail formatter displaying correctly on full node view.');
 
     if ($scheme == 'private') {
       // Log out and try to access the file.

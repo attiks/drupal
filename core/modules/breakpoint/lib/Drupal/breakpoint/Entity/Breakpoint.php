@@ -178,17 +178,17 @@ class Breakpoint extends ConfigEntityBase implements BreakpointInterface {
     if (preg_match('/[^0-9a-z_\-]/', $this->name)) {
       throw new InvalidBreakpointNameException(format_string("Invalid value '@name' for breakpoint name property. Breakpoint name property can only contain lowercase alphanumeric characters, underscores (_), and hyphens (-).", array('@name' => $this->name)));
     }
-    // Skip the empty media query provided by the breakpoint module.
-    if ($this->id != 'module.breakpoint._none') {
-      return $this::isValidMediaQuery($this->mediaQuery);
-    }
-    return TRUE;
+    return static::isValidMediaQuery($this->mediaQuery);
   }
 
   /**
    * {@inheritdoc}
    */
   public static function isValidMediaQuery($media_query) {
+    // Allow empty media queries.
+    if (empty($media_query)) {
+      return TRUE;
+    }
     // Array describing all known media features and the expected value type or
     // an array containing the allowed values.
     $media_features = array(
@@ -206,92 +206,89 @@ class Breakpoint extends ConfigEntityBase implements BreakpointInterface {
       'scan' => array('progressive', 'interlace'),
       'grid' => 'integer',
     );
-    if ($media_query) {
-      // Strip new lines and trim.
-      $media_query = str_replace(array("\r", "\n"), ' ', trim($media_query));
+    // Strip new lines and trim.
+    $media_query = str_replace(array("\r", "\n"), ' ', trim($media_query));
 
-      // Remove comments /* ... */.
-      $media_query = preg_replace('/\/\*[\s\S]*?\*\//', '', $media_query);
+    // Remove comments /* ... */.
+    $media_query = preg_replace('/\/\*[\s\S]*?\*\//', '', $media_query);
 
-      // Check media list.
-      $parts = explode(',', $media_query);
-      foreach ($parts as $part) {
-        // Split on ' and '
-        $query_parts = explode(' and ', trim($part));
-        $media_type_found = FALSE;
-        foreach ($query_parts as $query_part) {
-          $matches = array();
-          // Try to match: '(media_feature: value)' and variants.
-          if (preg_match('/^\(([\w\-]+)(:\s?([\w\-\.]+))?\)/', trim($query_part), $matches)) {
-            // Single expression like '(color)'.
-            if (isset($matches[1]) && !isset($matches[2])) {
-              if (!array_key_exists($matches[1], $media_features)) {
-                throw new InvalidBreakpointMediaQueryException('Invalid media feature detected.');
+    // Check media list.
+    $parts = explode(',', $media_query);
+    foreach ($parts as $part) {
+      // Split on ' and '
+      $query_parts = explode(' and ', trim($part));
+      $media_type_found = FALSE;
+      foreach ($query_parts as $query_part) {
+        $matches = array();
+        // Try to match: '(media_feature: value)' and variants.
+        if (preg_match('/^\(([\w\-]+)(:\s?([\w\-\.]+))?\)/', trim($query_part), $matches)) {
+          // Single expression like '(color)'.
+          if (isset($matches[1]) && !isset($matches[2])) {
+            if (!array_key_exists($matches[1], $media_features)) {
+              throw new InvalidBreakpointMediaQueryException('Invalid media feature detected.');
+            }
+          }
+          // Full expression like '(min-width: 20em)'.
+          elseif (isset($matches[3]) && !isset($matches[4])) {
+            $value = trim($matches[3]);
+            if (!array_key_exists($matches[1], $media_features)) {
+              // We need to allow vendor prefixed media features and make sure
+              // we are future proof, so only check allowed characters.
+              if (!preg_match('/^[a-zA-Z0-9\:\-\\ ]+$/i', trim($matches[1]))) {
+                throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
               }
             }
-            // Full expression like '(min-width: 20em)'.
-            elseif (isset($matches[3]) && !isset($matches[4])) {
-              $value = trim($matches[3]);
-              if (!array_key_exists($matches[1], $media_features)) {
-                // We need to allow vendor prefixed media features and make sure
-                // we are future proof, so only check allowed characters.
-                if (!preg_match('/^[a-zA-Z0-9\:\-\\ ]+$/i', trim($matches[1]))) {
-                  throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
-                }
+            elseif (is_array($media_features[$matches[1]])) {
+              // Check if value is allowed.
+              if (!array_key_exists($value, $media_features[$matches[1]])) {
+                throw new InvalidBreakpointMediaQueryException('Value is not allowed.');
               }
-              elseif (is_array($media_features[$matches[1]])) {
-                // Check if value is allowed.
-                if (!array_key_exists($value, $media_features[$matches[1]])) {
-                  throw new InvalidBreakpointMediaQueryException('Value is not allowed.');
-                }
-              }
-              elseif (isset ($media_features[$matches[1]])) {
-                switch ($media_features[$matches[1]]) {
-                  case 'length':
-                    $length_matches = array();
-                    // Check for a valid number and an allowed unit.
-                    if (preg_match('/^(\-)?(\d+(?:\.\d+)?)?((?:|em|ex|px|cm|mm|in|pt|pc|deg|rad|grad|ms|s|hz|khz|dpi|dpcm))$/i', trim($value), $length_matches)) {
-                      // Only -0 is allowed.
-                      if ($length_matches[1] === '-' && $length_matches[2] !== '0') {
-                        throw new InvalidBreakpointMediaQueryException('Invalid length detected.');
-                      }
-                      // If there's a unit, a number is needed as well.
-                      if ($length_matches[2] === '' && $length_matches[3] !== '') {
-                        throw new InvalidBreakpointMediaQueryException('Unit found, value is missing.');
-                      }
+            }
+            elseif (isset ($media_features[$matches[1]])) {
+              switch ($media_features[$matches[1]]) {
+                case 'length':
+                  $length_matches = array();
+                  // Check for a valid number and an allowed unit.
+                  if (preg_match('/^(\-)?(\d+(?:\.\d+)?)?((?:|em|ex|px|cm|mm|in|pt|pc|deg|rad|grad|ms|s|hz|khz|dpi|dpcm))$/i', trim($value), $length_matches)) {
+                    // Only -0 is allowed.
+                    if ($length_matches[1] === '-' && $length_matches[2] !== '0') {
+                      throw new InvalidBreakpointMediaQueryException('Invalid length detected.');
                     }
-                    else {
-                      throw new InvalidBreakpointMediaQueryException('Invalid unit detected.');
+                    // If there's a unit, a number is needed as well.
+                    if ($length_matches[2] === '' && $length_matches[3] !== '') {
+                      throw new InvalidBreakpointMediaQueryException('Unit found, value is missing.');
                     }
-                    break;
-                }
+                  }
+                  else {
+                    throw new InvalidBreakpointMediaQueryException('Invalid unit detected.');
+                  }
+                  break;
               }
-            }
-          }
-
-          // Check for screen, only screen, not screen and variants.
-          elseif (preg_match('/^((?:only|not)?\s?)([\w\-]+)$/i', trim($query_part), $matches)) {
-            if ($media_type_found) {
-              throw new InvalidBreakpointMediaQueryException('Only one media type is allowed.');
-            }
-            $media_type_found = TRUE;
-          }
-          // Check for (scan), (only scan), (not scan) and variants.
-          elseif (preg_match('/^((?:only|not)\s?)\(([\w\-]+)\)$/i', trim($query_part), $matches)) {
-            throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
-          }
-          else {
-            // We need to allow vendor prefixed media fetures and make sure we
-            // are future proof, so only check allowed characters.
-            if (!preg_match('/^[a-zA-Z0-9\-\\ ]+$/i', trim($query_part), $matches)) {
-              throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
             }
           }
         }
+
+        // Check for screen, only screen, not screen and variants.
+        elseif (preg_match('/^((?:only|not)?\s?)([\w\-]+)$/i', trim($query_part), $matches)) {
+          if ($media_type_found) {
+            throw new InvalidBreakpointMediaQueryException('Only one media type is allowed.');
+          }
+          $media_type_found = TRUE;
+        }
+        // Check for (scan), (only scan), (not scan) and variants.
+        elseif (preg_match('/^((?:only|not)\s?)\(([\w\-]+)\)$/i', trim($query_part), $matches)) {
+          throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
+        }
+        else {
+          // We need to allow vendor prefixed media fetures and make sure we
+          // are future proof, so only check allowed characters.
+          if (!preg_match('/^[a-zA-Z0-9\-\\ ]+$/i', trim($query_part), $matches)) {
+            throw new InvalidBreakpointMediaQueryException('Invalid media query detected.');
+          }
+        }
       }
-      return TRUE;
     }
-    throw new InvalidBreakpointMediaQueryException('Media query is empty.');
+    return TRUE;
   }
 
   /**

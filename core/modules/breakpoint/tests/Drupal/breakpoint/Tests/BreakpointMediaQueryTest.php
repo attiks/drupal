@@ -62,6 +62,8 @@ class BreakpointMediaQueryTest extends UnitTestCase {
       'screen and (-webkit-min-device-pixel-ratio: 7)',
       'screen and (min-orientation: landscape)',
       'screen and (max-orientation: landscape)',
+      // Empty media queries are allowed.
+      '',
     );
 
     foreach ($media_queries as $media_query) {
@@ -74,7 +76,6 @@ class BreakpointMediaQueryTest extends UnitTestCase {
    */
   public function testInvalidMediaQueries() {
     $media_queries = array(
-      '',
       'not (orientation)',
       'only (orientation)',
       'all and not all',

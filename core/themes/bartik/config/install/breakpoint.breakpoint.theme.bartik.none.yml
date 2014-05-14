@@ -1,9 +1,9 @@
-id: module.breakpoint._none
-name: _none
+id: theme.bartik.none
+name: none
 label: None (empty media query)
 mediaQuery: ''
-source: breakpoint
-sourceType: module
+source: bartik
+sourceType: theme
 weight: 99
 multipliers:
   1x: 1x

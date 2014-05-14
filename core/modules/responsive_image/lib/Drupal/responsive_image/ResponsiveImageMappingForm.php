@@ -85,11 +85,11 @@ class ResponsiveImageMappingForm extends EntityForm {
           '#title' => t('Type'),
           '#type' => 'radios',
           '#options' => array(
-            '' => t('Do not use this breakpoint'),
+            '_none' => t('Do not use this breakpoint'),
             'image_style' => t('Use image styles'),
             'sizes' => t('Use the sizes attribute'),
           ),
-          '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '',
+          '#default_value' => isset($mapping_definition['mapping_type']) ? $mapping_definition['mapping_type'] : '_none',
         );
         $form['mappings'][$breakpoint_id][$multiplier]['image_style'] = array(
           '#type' => 'select',

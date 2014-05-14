@@ -164,7 +164,7 @@ class ResponsiveImageAdminUITest extends WebTestBase {
     $this->assertFieldByName('mappings[custom.user.small][1x][image_style]', 'thumbnail');
     $this->assertFieldByName('mappings[custom.user.small][1x][mapping_type]', 'image_style');
     $this->assertFieldByName('mappings[custom.user.small][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '_none');
     $this->assertFieldByName('mappings[custom.user.medium][1x][image_style]', '');
     $this->assertFieldByName('mappings[custom.user.medium][1x][mapping_type]', 'sizes');
     $this->assertFieldByName('mappings[custom.user.medium][1x][sizes]', '(min-width: 700px) 700px, 100vw');
@@ -172,11 +172,11 @@ class ResponsiveImageAdminUITest extends WebTestBase {
     $this->assertFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-medium');
     $this->assertNoFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-thumbnail');
     $this->assertFieldByName('mappings[custom.user.medium][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '_none');
     $this->assertFieldByName('mappings[custom.user.large][1x][image_style]', 'large');
     $this->assertFieldByName('mappings[custom.user.large][1x][mapping_type]', 'image_style');
     $this->assertFieldByName('mappings[custom.user.large][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '_none');
 
     // Delete the mapping.
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one/delete');
