@@ -5,6 +5,7 @@ breakpoint_ids:
   - theme.bartik.mobile
   - theme.bartik.narrow
   - theme.bartik.wide
+  - theme.bartik.none
 source: bartik
 sourceType: theme
 status: true
