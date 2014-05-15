@@ -1282,11 +1282,11 @@ function template_preprocess_links(&$variables) {
  *   - srcset: Array of multiple URI's and sizes/multipliers.
  */
 function template_preprocess_image(&$variables) {
-  if (isset($variables['uri']) && !empty($variables['uri'])) {
+  if (!empty($variables['uri'])) {
     $variables['attributes']['src'] = file_create_url($variables['uri']);
   }
 
-  if (isset($variables['srcset']) && !empty($variables['srcset'])) {
+  if (!empty($variables['srcset'])) {
     $srcsets = array();
     foreach ($variables['srcset'] as $srcset) {
       // URI is mandatory.
