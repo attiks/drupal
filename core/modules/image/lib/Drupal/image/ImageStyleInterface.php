@@ -132,6 +132,14 @@ interface ImageStyleInterface extends ConfigEntityInterface {
   public function transformDimensions(array &$dimensions);
 
   /**
+   * Determines the mime type of the styled image.
+   *
+   * @param string $mime_type
+   *   Mime type to be modified.
+   */
+  public function transformMimeType(&$mime_type);
+
+  /**
    * Returns a specific image effect.
    *
    * @param string $effect
