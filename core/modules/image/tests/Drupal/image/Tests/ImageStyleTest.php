@@ -99,10 +99,6 @@ class ImageStyleTest extends UnitTestCase {
         ->method('transformMimeType')
         ->will($this->returnCallback(function (&$mime_type) { $mime_type = 'image/webp';}));
     $this->effectManager->expects($this->any())
-        ->method('get')
-        ->with($image_effect_id)
-        ->will($this->returnValue($image_effect));
-    $this->effectManager->expects($this->any())
         ->method('createInstance')
         ->with($image_effect_id)
         ->will($this->returnValue($image_effect));
