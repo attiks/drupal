@@ -2,11 +2,12 @@
 
 /**
  * @file
- * Contains \Drupal\responsive_image\Tests\ResponsiveImageMappingEntityTest.
+ * Contains \Drupal\image\Tests\ImageStyleTest.
  */
 
 namespace Drupal\image\Tests;
 
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Tests\UnitTestCase;
 use \Drupal\image\Entity\ImageStyle;
 
@@ -47,6 +48,13 @@ class ImageStyleTest extends UnitTestCase {
   protected $entityTypeId;
 
   /**
+   * The effect manager used for testing.
+   *
+   * @var \Drupal\image\ImageEffectManager|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $effectManager;
+
+  /**
    * {@inheritdoc}
    */
   public static function getInfo() {
@@ -79,8 +87,17 @@ class ImageStyleTest extends UnitTestCase {
     $this->imageEffect->expects($this->any())
         ->method('transformMimeType')
         ->will($this->returnCallback(function (&$mime_type) { $mime_type = 'image/webp';}));
-    $this->effectManager = $this->getMock('\Drupal\Component\Plugin\PluginManagerInterface');
-
+    $this->effectManager = $this->getMockBuilder('\Drupal\image\ImageEffectManager')
+        ->disableOriginalConstructor()
+        ->getMock();
+    $this->effectManager->expects($this->any())
+        ->method('get')
+        ->with($this->imageEffectId)
+        ->will($this->returnValue($this->imageEffect));
+    $this->effectManager->expects($this->any())
+        ->method('createInstance')
+        ->with($this->imageEffectId)
+        ->will($this->returnValue($this->imageEffect));
     $container = new ContainerBuilder();
     $container->set('plugin.manager.image.effect', $this->effectManager);
     \Drupal::setContainer($container);
@@ -90,14 +107,9 @@ class ImageStyleTest extends UnitTestCase {
    * @covers ::transformMimeType
    */
   public function testTransformMimeType() {
-    $this->effectManager->expects($this->any())
-        ->method('getDefinition')
-        ->with($this->imageEffectId)
-        ->will($this->returnValue($this->imageEffect));
-    $image_style = new ImageStyle(array('effects' => array($this->imageEffectId => array())), $this->entityTypeId);
+    $image_style = new ImageStyle(array('effects' => array($this->imageEffectId => array('id' => $this->imageEffectId))), $this->entityTypeId);
     $mime_type = 'image/jpeg';
     $image_style->transformMimeType($mime_type);
-    $this->assertEquals($mime_type, 'image/webp');
+    $this->assertEquals($mime_type, 'image/webp', $mime_type);
   }
-
 }
