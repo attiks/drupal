@@ -20,13 +20,6 @@ use \Drupal\image\Entity\ImageStyle;
 class ImageStyleTest extends UnitTestCase {
 
   /**
-   * The image effect used for testing.
-   *
-   * @var \Drupal\image\ImageEffectInterface|\PHPUnit_Framework_MockObject_MockObject
-   */
-  protected $imageEffect;
-
-  /**
    * The entity type used for testing.
    *
    * @var \Drupal\Core\Entity\EntityTypeInterface|\PHPUnit_Framework_MockObject_MockObject
@@ -55,6 +48,13 @@ class ImageStyleTest extends UnitTestCase {
   protected $effectManager;
 
   /**
+   * The image effect used for testing.
+   *
+   * @var \Drupal\image\ImageEffectInterface|\PHPUnit_Framework_MockObject_MockObject
+   */
+  protected $imageEffect;
+
+  /**
    * {@inheritdoc}
    */
   public static function getInfo() {
@@ -80,26 +80,10 @@ class ImageStyleTest extends UnitTestCase {
                         ->method('getDefinition')
                         ->with($this->entityTypeId)
                         ->will($this->returnValue($this->entityType));
-    $this->imageEffectId = $this->randomName();
-    $this->imageEffect = $this->getMockBuilder('\Drupal\image\ImageEffectBase')
-        ->setConstructorArgs(array(array(), $this->imageEffectId, array()))
-        ->getMock();
-    $this->imageEffect->expects($this->any())
-        ->method('transformMimeType')
-        ->will($this->returnCallback(function (&$mime_type) { $mime_type = 'image/webp';}));
     $this->effectManager = $this->getMockBuilder('\Drupal\image\ImageEffectManager')
         ->disableOriginalConstructor()
         ->getMock();
-    $this->effectManager->expects($this->any())
-        ->method('get')
-        ->with($this->imageEffectId)
-        ->will($this->returnValue($this->imageEffect));
-    $this->effectManager->expects($this->any())
-        ->method('createInstance')
-        ->with($this->imageEffectId)
-        ->will($this->returnValue($this->imageEffect));
     $container = new ContainerBuilder();
-    $container->set('plugin.manager.image.effect', $this->effectManager);
     \Drupal::setContainer($container);
   }
 
@@ -107,9 +91,28 @@ class ImageStyleTest extends UnitTestCase {
    * @covers ::transformMimeType
    */
   public function testTransformMimeType() {
-    $image_style = new ImageStyle(array('effects' => array($this->imageEffectId => array('id' => $this->imageEffectId))), $this->entityTypeId);
-    $mime_type = 'image/jpeg';
-    $image_style->transformMimeType($mime_type);
-    $this->assertEquals($mime_type, 'image/webp', $mime_type);
+    $image_effect_id = $this->randomName();
+    $image_effect = $this->getMockBuilder('\Drupal\image\ImageEffectBase')
+        ->setConstructorArgs(array(array(), $image_effect_id, array()))
+        ->getMock();
+    $image_effect->expects($this->any())
+        ->method('transformMimeType')
+        ->will($this->returnCallback(function (&$mime_type) { $mime_type = 'image/webp';}));
+    $this->effectManager->expects($this->any())
+        ->method('get')
+        ->with($image_effect_id)
+        ->will($this->returnValue($image_effect));
+    $this->effectManager->expects($this->any())
+        ->method('createInstance')
+        ->with($image_effect_id)
+        ->will($this->returnValue($image_effect));
+    \Drupal::getContainer()->set('plugin.manager.image.effect', $this->effectManager);
+
+    $image_style = new ImageStyle(array('effects' => array($image_effect_id => array('id' => $image_effect_id))), $this->entityTypeId);
+    $mime_types = array('image/jpeg', 'image/gif', 'image/png');
+    foreach ($mime_types as $mime_type) {
+      $image_style->transformMimeType($mime_type);
+      $this->assertEquals($mime_type, 'image/webp');
+    }
   }
 }
