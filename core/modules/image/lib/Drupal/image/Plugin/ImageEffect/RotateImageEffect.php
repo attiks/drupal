@@ -73,12 +73,6 @@ class RotateImageEffect extends ImageEffectBase implements ConfigurableImageEffe
   /**
    * {@inheritdoc}
    */
-  public function transformMimeType(&$mime_type) {
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function getSummary() {
     return array(
       '#theme' => 'image_rotate_summary',

@@ -30,12 +30,6 @@ class DesaturateImageEffect extends ImageEffectBase {
   /**
    * {@inheritdoc}
    */
-  public function transformMimeType(&$mime_type) {
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function applyEffect(ImageInterface $image) {
     if (!$image->desaturate()) {
       watchdog('image', 'Image desaturate failed using the %toolkit toolkit on %path (%mimetype, %dimensions)', array('%toolkit' => $image->getToolkitId(), '%path' => $image->getSource(), '%mimetype' => $image->getMimeType(), '%dimensions' => $image->getWidth() . 'x' . $image->getHeight()), WATCHDOG_ERROR);
