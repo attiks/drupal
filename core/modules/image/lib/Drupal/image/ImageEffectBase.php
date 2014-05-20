@@ -48,7 +48,6 @@ abstract class ImageEffectBase extends PluginBase implements ImageEffectInterfac
    * {@inheritdoc}
    */
   public function transformMimeType(&$mime_type) {
-    $mime_type = NULL;
   }
 
   /**
