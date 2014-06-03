@@ -5,7 +5,6 @@
  * Responsive image display formatter for image fields.
  */
 
-use Drupal\breakpoint\Entity\Breakpoint;
 use \Drupal\Core\Template\Attribute;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -196,7 +195,7 @@ function theme_responsive_image($variables) {
 
   // All breakpoints and multipliers.
   foreach ($variables['breakpoints'] as $breakpoint_name => $multipliers) {
-    $breakpoint = Breakpoint::load($breakpoint_name);
+    $breakpoint = breakpoint_load_breakpoint($breakpoint_name);
     if ($breakpoint) {
       $sizes = array();
       $srcset = array();
@@ -238,7 +237,7 @@ function theme_responsive_image($variables) {
       $sources[] = array(
         '#theme' => 'responsive_image_source',
         '#srcset' => implode(', ', array_unique($srcset)),
-        '#media' => $breakpoint->mediaQuery,
+        '#media' => $breakpoint['mediaQuery'],
         '#mime_type' => count($derivative_mime_types) == 1 ? reset($derivative_mime_types) : '',
         '#sizes' => implode(',', array_unique($sizes)),
       );

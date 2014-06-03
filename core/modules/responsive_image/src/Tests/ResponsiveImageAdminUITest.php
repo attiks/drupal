@@ -8,7 +8,6 @@
 namespace Drupal\responsive_image\Tests;
 
 use Drupal\simpletest\WebTestBase;
-use Drupal\breakpoint\Entity\Breakpoint;
 
 /**
  * Tests for breakpoint sets admin interface.
@@ -18,7 +17,7 @@ class ResponsiveImageAdminUITest extends WebTestBase {
   /**
    * The breakpoint group for testing.
    *
-   * @var \Drupal\breakpoint\Entity\BreakpointGroupInterface
+   * @var array
    */
   protected $breakpointGroup;
 
@@ -27,7 +26,7 @@ class ResponsiveImageAdminUITest extends WebTestBase {
    *
    * @var array
    */
-  public static $modules = array('responsive_image');
+  public static $modules = array('responsive_image', 'responsive_image_test_module');
 
   /**
    * Drupal\simpletest\WebTestBase\getInfo().
@@ -52,31 +51,7 @@ class ResponsiveImageAdminUITest extends WebTestBase {
     ));
 
     $this->drupalLogin($this->admin_user);
-
-    // Add breakpoint_group and breakpoints.
-    $this->breakpointGroup = entity_create('breakpoint_group', array(
-      'name' => 'atestset',
-      'label' => 'A test set',
-      'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
-    ));
-
-    $breakpoint_names = array('small', 'medium', 'large');
-    for ($i = 0; $i < 3; $i++) {
-      $width = ($i + 1) * 200;
-      $breakpoint = entity_create('breakpoint', array(
-        'name' => $breakpoint_names[$i],
-        'mediaQuery' => "(min-width: {$width}px)",
-        'source' => 'user',
-        'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
-        'multipliers' => array(
-          '1.5x' => 0,
-          '2x' => '2x',
-        ),
-      ));
-      $breakpoint->save();
-      $this->breakpointGroup->addBreakpoints(array($breakpoint));
-    }
-    $this->breakpointGroup->save();
+    $this->breakpointGroup = breakpoint_load_breakpoint_group('module.responsive_image_test_module.breakpointgroup');
 
   }
 
@@ -90,13 +65,13 @@ class ResponsiveImageAdminUITest extends WebTestBase {
 
     // Add a new responsive image mapping, our breakpoint set should be selected.
     $this->drupalGet('admin/config/media/responsive-image-mapping/add');
-    $this->assertFieldByName('breakpointGroup', $this->breakpointGroup->id());
+    $this->assertFieldByName('breakpointGroup', $this->breakpointGroup['id']);
 
     // Create a new group.
     $edit = array(
       'label' => 'Mapping One',
       'id' => 'mapping_one',
-      'breakpointGroup' => $this->breakpointGroup->id(),
+      'breakpointGroup' => $this->breakpointGroup['id'],
     );
     $this->drupalPostForm('admin/config/media/responsive-image-mapping/add', $edit, t('Save'));
 
@@ -110,73 +85,73 @@ class ResponsiveImageAdminUITest extends WebTestBase {
     // Edit the group.
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one');
     $this->assertFieldByName('label', 'Mapping One');
-    $this->assertFieldByName('breakpointGroup', $this->breakpointGroup->id());
+    $this->assertFieldByName('breakpointGroup', $this->breakpointGroup['id']);
 
     // Check if the radio buttons are present.
-    $this->assertFieldByName('mappings[custom.user.small][1x][mapping_type]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][mapping_type]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '');
-    $this->assertFieldByName('mappings[custom.user.large][1x][mapping_type]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][mapping_type]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][mapping_type]', '');
 
     // Check if the image style dropdowns are present.
-    $this->assertFieldByName('mappings[custom.user.small][1x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.large][1x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][image_style]', '');
 
     // Check if the sizes textfields are present.
-    $this->assertFieldByName('mappings[custom.user.small][1x][sizes]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x][sizes]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][sizes]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][sizes]', '');
-    $this->assertFieldByName('mappings[custom.user.large][1x][sizes]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][sizes]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][sizes]', '');
 
     // Check if the image styles checkboxes are present.
     foreach (array_keys(image_style_options(FALSE)) as $image_style_name) {
-      $this->assertFieldByName('mappings[custom.user.small][1x][sizes_image_styles][' . $image_style_name . ']');
-      $this->assertFieldByName('mappings[custom.user.small][2x][sizes_image_styles][' . $image_style_name . ']');
-      $this->assertFieldByName('mappings[custom.user.medium][1x][sizes_image_styles][' . $image_style_name . ']');
-      $this->assertFieldByName('mappings[custom.user.medium][2x][sizes_image_styles][' . $image_style_name . ']');
-      $this->assertFieldByName('mappings[custom.user.large][1x][sizes_image_styles][' . $image_style_name . ']');
-      $this->assertFieldByName('mappings[custom.user.large][2x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][sizes_image_styles][' . $image_style_name . ']');
+      $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][sizes_image_styles][' . $image_style_name . ']');
     }
 
     // Save mappings for 1x variant only.
     $edit = array(
       'label' => 'Mapping One',
-      'breakpointGroup' => $this->breakpointGroup->id(),
-      'mappings[custom.user.small][1x][mapping_type]' => 'image_style',
-      'mappings[custom.user.small][1x][image_style]' => 'thumbnail',
-      'mappings[custom.user.medium][1x][mapping_type]' => 'sizes',
-      'mappings[custom.user.medium][1x][sizes]' => '(min-width: 700px) 700px, 100vw',
-      'mappings[custom.user.medium][1x][sizes_image_styles][large]' => 'large',
-      'mappings[custom.user.medium][1x][sizes_image_styles][medium]' => 'medium',
-      'mappings[custom.user.large][1x][mapping_type]' => 'image_style',
-      'mappings[custom.user.large][1x][image_style]' => 'large',
+      'breakpointGroup' => $this->breakpointGroup['id'],
+      'mappings[module.responsive_image_test_module.mobile][1x][mapping_type]' => 'image_style',
+      'mappings[module.responsive_image_test_module.mobile][1x][image_style]' => 'thumbnail',
+      'mappings[module.responsive_image_test_module.narrow][1x][mapping_type]' => 'sizes',
+      'mappings[module.responsive_image_test_module.narrow][1x][sizes]' => '(min-width: 700px) 700px, 100vw',
+      'mappings[module.responsive_image_test_module.narrow][1x][sizes_image_styles][large]' => 'large',
+      'mappings[module.responsive_image_test_module.narrow][1x][sizes_image_styles][medium]' => 'medium',
+      'mappings[module.responsive_image_test_module.wide][1x][mapping_type]' => 'image_style',
+      'mappings[module.responsive_image_test_module.wide][1x][image_style]' => 'large',
     );
     $this->drupalPostForm('admin/config/media/responsive-image-mapping/mapping_one', $edit, t('Save'));
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one');
-    $this->assertFieldByName('mappings[custom.user.small][1x][image_style]', 'thumbnail');
-    $this->assertFieldByName('mappings[custom.user.small][1x][mapping_type]', 'image_style');
-    $this->assertFieldByName('mappings[custom.user.small][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.small][2x][mapping_type]', '_none');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][mapping_type]', 'sizes');
-    $this->assertFieldByName('mappings[custom.user.medium][1x][sizes]', '(min-width: 700px) 700px, 100vw');
-    $this->assertFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-large');
-    $this->assertFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-medium');
-    $this->assertNoFieldChecked('edit-mappings-customusermedium-1x-sizes-image-styles-thumbnail');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.medium][2x][mapping_type]', '_none');
-    $this->assertFieldByName('mappings[custom.user.large][1x][image_style]', 'large');
-    $this->assertFieldByName('mappings[custom.user.large][1x][mapping_type]', 'image_style');
-    $this->assertFieldByName('mappings[custom.user.large][2x][image_style]', '');
-    $this->assertFieldByName('mappings[custom.user.large][2x][mapping_type]', '_none');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][image_style]', 'thumbnail');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][1x][mapping_type]', 'image_style');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.mobile][2x][mapping_type]', '_none');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][mapping_type]', 'sizes');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][1x][sizes]', '(min-width: 700px) 700px, 100vw');
+    $this->assertFieldChecked('edit-mappings-moduleresponsive-image-test-modulenarrow-1x-sizes-image-styles-large');
+    $this->assertFieldChecked('edit-mappings-moduleresponsive-image-test-modulenarrow-1x-sizes-image-styles-medium');
+    $this->assertNoFieldChecked('edit-mappings-moduleresponsive-image-test-modulenarrow-1x-sizes-image-styles-thumbnail');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.narrow][2x][mapping_type]', '_none');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][image_style]', 'large');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][1x][mapping_type]', 'image_style');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][image_style]', '');
+    $this->assertFieldByName('mappings[module.responsive_image_test_module.wide][2x][mapping_type]', '_none');
 
     // Delete the mapping.
     $this->drupalGet('admin/config/media/responsive-image-mapping/mapping_one/delete');

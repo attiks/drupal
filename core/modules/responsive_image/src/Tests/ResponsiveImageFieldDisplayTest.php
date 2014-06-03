@@ -8,7 +8,6 @@
 namespace Drupal\responsive_image\Tests;
 
 use Drupal\Core\Language\Language;
-use Drupal\breakpoint\Entity\Breakpoint;
 use Drupal\image\Tests\ImageFieldTestBase;
 
 /**
@@ -23,7 +22,7 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
    *
    * @var array
    */
-  public static $modules = array('field_ui', 'responsive_image');
+  public static $modules = array('field_ui', 'responsive_image', 'responsive_image_test_module');
 
   /**
    * Drupal\simpletest\WebTestBase\getInfo().
@@ -57,60 +56,22 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
       'administer image styles'
     ));
     $this->drupalLogin($this->admin_user);
-
-    // Add breakpoint_group and breakpoints.
-    $breakpoint_group = entity_create('breakpoint_group', array(
-      'name' => 'atestset',
-      'label' => 'A test set',
-      'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
-    ));
-
-    $breakpoint_names = array('small', 'medium', 'large');
-    for ($i = 0; $i < 3; $i++) {
-      $width = ($i + 1) * 200;
-      $breakpoint = entity_create('breakpoint', array(
-        'name' => $breakpoint_names[$i],
-        'mediaQuery' => "(min-width: {$width}px)",
-        'source' => 'user',
-        'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
-        'multipliers' => array(
-          '1.5x' => 0,
-          '2x' => '2x',
-        ),
-      ));
-      $breakpoint->save();
-      $breakpoint_group->addBreakpoints(array($breakpoint));
-    }
-    // Empty breakpoint
-    $breakpoint = entity_create('breakpoint', array(
-      'name' => 'none',
-      'mediaQuery' => '',
-      'source' => 'user',
-      'sourceType' => Breakpoint::SOURCE_TYPE_USER_DEFINED,
-      'multipliers' => array(
-        '1.5x' => 0,
-        '2x' => '2x',
-      ),
-    ));
-    $breakpoint->save();
-    $breakpoint_group->addBreakpoints(array($breakpoint));
-    $breakpoint_group->save();
-
+    $breakpoint_group = breakpoint_load_breakpoint_group('module.responsive_image_test_module.breakpointgroup');
     // Add responsive image mapping.
     $responsive_image_mapping = entity_create('responsive_image_mapping', array(
       'id' => 'mapping_one',
       'label' => 'Mapping One',
-      'breakpointGroup' => $breakpoint_group->id(),
+      'breakpointGroup' => $breakpoint_group['id'],
     ));
     $responsive_image_mapping->save();
     $mappings = array();
-    $mappings['custom.user.small']['1x'] = array(
+    $mappings['module.responsive_image_test_module.mobile']['1x'] = array(
       'mapping_type' => 'image_style',
       'image_style' => 'thumbnail',
       'sizes' => '',
       'sizes_image_styles' => array(),
     );
-    $mappings['custom.user.medium']['1x'] = array(
+    $mappings['module.responsive_image_test_module.narrow']['1x'] = array(
       'mapping_type' => 'sizes',
       'image_style' => '',
       'sizes' => '(min-width: 700px) 700px, 100vw',
@@ -119,13 +80,13 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
         'medium' => 'medium',
       ),
     );
-    $mappings['custom.user.large']['1x'] = array(
+    $mappings['module.responsive_image_test_module.wide']['1x'] = array(
       'mapping_type' => 'image_style',
       'image_style' => 'large',
       'sizes' => '',
       'sizes_image_styles' => array(),
     );
-    $mappings['custom.user.none']['1x'] = array(
+    $mappings['module.responsive_image_test_module.none']['1x'] = array(
       'mapping_type' => 'sizes',
       'image_style' => '',
       'sizes' => '(min-width: 500px) 500px, 100vw',
@@ -236,11 +197,11 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
     $this->assertRaw('/styles/thumbnail/');
     $this->assertRaw('/styles/medium/');
     $this->assertRaw('/styles/large/');
-    $this->assertRaw('media="(min-width: 200px)"');
-    $this->assertRaw('media="(min-width: 400px)"');
+    $this->assertRaw('media="(min-width: 0px)"');
+    $this->assertRaw('media="(min-width: 560px)"');
     $this->assertRaw('sizes="(min-width: 700px) 700px, 100vw"');
-    $this->assertPattern('/media="\(min-width: 400px\)".+?sizes="\(min-width: 700px\) 700px, 100vw"/');
-    $this->assertRaw('media="(min-width: 600px)"');
+    $this->assertPattern('/media="\(min-width: 560px\)".+?sizes="\(min-width: 700px\) 700px, 100vw"/');
+    $this->assertRaw('media="(min-width: 851px)"');
     // Make sure the empty breakpoint mapping doesn't have a media attribute.
     $this->assertNoPattern('/media="[^"]*".+?sizes="\(min-width: 500px\) 500px, 100vw"/');
     $this->assertRaw('sizes="(min-width: 500px) 500px, 100vw"');

@@ -7,3 +7,40 @@ version: VERSION
 dependencies:
   - breakpoint
   - menu_link
+breakpoints:
+  module.toolbar.narrow:
+    id: module.toolbar.narrow
+    name: narrow
+    label: narrow
+    mediaQuery: 'only screen and (min-width: 16.5em)'
+    source: toolbar
+    sourceType: module
+    weight: 0
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en
+  module.toolbar.standard:
+    id: module.toolbar.standard
+    name: standard
+    label: standard
+    mediaQuery: 'only screen and (min-width: 38.125em)'
+    source: toolbar
+    sourceType: module
+    weight: 1
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en
+  module.toolbar.wide:
+    id: module.toolbar.wide
+    name: wide
+    label: wide
+    mediaQuery: 'only screen and (min-width: 52em)'
+    source: toolbar
+    sourceType: module
+    weight: 2
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en

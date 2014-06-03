@@ -66,7 +66,7 @@ class ResponsiveImageMappingForm extends EntityForm {
     $form['breakpointGroup'] = array(
       '#type' => 'select',
       '#title' => $this->t('Breakpoint group'),
-      '#default_value' => ($responsive_image_mapping->getBreakpointGroup() != '') ? $responsive_image_mapping->getBreakpointGroup()->id() : '',
+      '#default_value' => ($responsive_image_mapping->getBreakpointGroup() != '') ? $responsive_image_mapping->getBreakpointGroup()['id'] : '',
       '#options' => breakpoint_group_select_options(),
       '#required' => TRUE,
       '#description' => $description,
@@ -75,8 +75,8 @@ class ResponsiveImageMappingForm extends EntityForm {
     $image_styles = image_style_options(TRUE);
     foreach ($responsive_image_mapping->getMappings() as $breakpoint_id => $mapping) {
       foreach ($mapping as $multiplier => $mapping_definition) {
-        $breakpoint = entity_load('breakpoint', $breakpoint_id);
-        $label = $multiplier . ' ' . $breakpoint->label . ' [' . $breakpoint->mediaQuery . ']';
+        $breakpoint = $responsive_image_mapping->getBreakpointGroup()['breakpoints'][$breakpoint_id];
+        $label = $multiplier . ' ' . $breakpoint['name'] . ' [' . $breakpoint['mediaQuery'] . ']';
         $form['mappings'][$breakpoint_id][$multiplier] = array(
           '#type' => 'details',
           '#title' => String::checkPlain($label),

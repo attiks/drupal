@@ -172,14 +172,14 @@ function toolbar_pre_render($element) {
 
   // Get the configured breakpoints to switch from vertical to horizontal
   // toolbar presentation.
-  $breakpoints = entity_load('breakpoint_group', 'module.toolbar.toolbar');
+  $breakpoints = breakpoint_load_breakpoint_group('module.toolbar.breakpointgroup');
   if (!empty($breakpoints)) {
     $media_queries = array();
     $media_queries['toolbar']['breakpoints'] = array_map(
-      function ($object) {
-        return $object->mediaQuery;
+      function ($breakpoint) {
+        return $breakpoint['mediaQuery'];
       },
-      $breakpoints->getBreakpoints()
+      $breakpoints['breakpoints']
     );
 
     $element['#attached']['js'][] = array(

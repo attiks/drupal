@@ -4,3 +4,52 @@ description: 'Test theme for breakpoint.'
 version: VERSION
 core: 8.x
 'base theme': bartik
+breakpoints:
+  theme.breakpoint_test_theme.mobile:
+    id: theme.breakpoint_test_theme.mobile
+    name: mobile
+    label: mobile
+    mediaQuery: '(min-width: 0px)'
+    source: breakpoint_test_theme
+    sourceType: theme
+    weight: 0
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en
+  theme.breakpoint_test_theme.narrow:
+    id: theme.breakpoint_test_theme.narrow
+    name: narrow
+    label: narrow
+    mediaQuery: '(min-width: 560px)'
+    source: breakpoint_test_theme
+    sourceType: theme
+    weight: 1
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en
+  theme.breakpoint_test_theme.wide:
+    id: theme.breakpoint_test_theme.wide
+    name: wide
+    label: wide
+    mediaQuery: '(min-width: 851px)'
+    source: breakpoint_test_theme
+    sourceType: theme
+    weight: 2
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en
+  theme.breakpoint_test_theme.tv:
+    id: theme.breakpoint_test_theme.tv
+    name: tv
+    label: tv
+    mediaQuery: 'only screen and (min-width: 3456px)'
+    source: breakpoint_test_theme
+    sourceType: theme
+    weight: 3
+    multipliers:
+      1x: 1x
+    status: true
+    langcode: en

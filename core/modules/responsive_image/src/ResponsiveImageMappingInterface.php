@@ -46,7 +46,7 @@ interface ResponsiveImageMappingInterface extends ConfigEntityInterface {
   /**
    * Sets the breakpoint group for the responsive_image mapping.
    *
-   * @param \Drupal\breakpoint\Entity\BreakpointGroup $breakpoint_group
+   * @param array $breakpoint_group
    *   The responsive_image mappings breakpoint group.
    *
    * @return $this
@@ -56,7 +56,7 @@ interface ResponsiveImageMappingInterface extends ConfigEntityInterface {
   /**
    * Returns the breakpoint group for the responsive_image mapping.
    *
-   * @return \Drupal\breakpoint\Entity\BreakpointGroup
+   * @return array
    *   The responsive_image mappings breakpoint group.
    */
   public function getBreakpointGroup();

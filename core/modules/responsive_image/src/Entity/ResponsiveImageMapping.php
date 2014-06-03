@@ -64,7 +64,7 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
   /**
    * The responsive image breakpoint group.
    *
-   * @var Drupal\breakpoint\Entity\BreakpointGroup
+   * @var array
    */
   protected $breakpointGroup = '';
 
@@ -78,28 +78,13 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
   }
 
   /**
-   * {@inheritdoc}
-   */
-  public function calculateDependencies() {
-    parent::calculateDependencies();
-    if (isset($this->breakpointGroup)) {
-      // @todo Implement toArray() so we do not have reload the
-      //   entity since this property is changed in
-      //   \Drupal\responsive_image\Entity\ResponsiveImageMapping::save().
-      $breakpoint_group = \Drupal::entityManager()->getStorage('breakpoint_group')->load($this->breakpointGroup);
-      $this->addDependency('entity', $breakpoint_group->getConfigDependencyName());
-    }
-    return $this->dependencies;
-  }
-
-  /**
    * Overrides Drupal\Core\Entity::save().
    */
   public function save() {
     // Only save the keys, but return the full objects.
     $breakpoint_group = $this->getBreakpointGroup();
-    if ($breakpoint_group && is_object($breakpoint_group)) {
-      $this->setBreakpointGroup($breakpoint_group->id());
+    if ($breakpoint_group && is_array($breakpoint_group)) {
+      $this->setBreakpointGroup($breakpoint_group['id']);
     }
 
     // Split the breakpoint ids into their different parts, as dots as
@@ -132,7 +117,7 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
    */
   protected function loadBreakpointGroup() {
     if ($this->getBreakpointGroup()) {
-      $breakpoint_group = entity_load('breakpoint_group', $this->getBreakpointGroup());
+      $breakpoint_group = breakpoint_load_breakpoint_group($this->getBreakpointGroup());
       $this->setBreakpointGroup($breakpoint_group);
     }
   }
@@ -144,7 +129,7 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
     $loaded_mappings = $this->getMappings();
     $all_mappings = array();
     if ($breakpoint_group = $this->getBreakpointGroup()) {
-      $breakpoints = $breakpoint_group->getBreakpoints();
+      $breakpoints = $breakpoint_group['breakpoints'];
       foreach ($breakpoints as $breakpoint_id => $breakpoint) {
         // Get the components of the breakpoint ID to match the format of the
         // configuration file.
@@ -157,8 +142,8 @@ class ResponsiveImageMapping extends ConfigEntityBase implements ResponsiveImage
         }
 
         // Get the mapping for the other multipliers.
-        if (isset($breakpoint->multipliers) && !empty($breakpoint->multipliers)) {
-          foreach ($breakpoint->multipliers as $multiplier => $status) {
+        if (isset($breakpoint['multipliers']) && !empty($breakpoint['multipliers'])) {
+          foreach ($breakpoint['multipliers'] as $multiplier => $status) {
             if ($status) {
               $all_mappings[$breakpoint_id][$multiplier] = '';
               if (isset($loaded_mappings[$source_type][$source][$name][$multiplier])) {

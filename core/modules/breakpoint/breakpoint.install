@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the breakpoint module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function breakpoint_install() {
+  breakpoint_read_breakpoint_groups();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function breakpoint_uninstall() {
+  breakpoint_remove_breakpoint_groups();
+}

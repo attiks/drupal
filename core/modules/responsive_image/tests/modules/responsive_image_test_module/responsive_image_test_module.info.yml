@@ -1,0 +1,58 @@
+name: 'Responsive image test module'
+type: module
+description: 'Test module for responsive image.'
+version: VERSION
+core: 8.x
+breakpoints:
+  module.responsive_image_test_module.mobile:
+    id: module.responsive_image_test_module.mobile
+    name: mobile
+    label: mobile
+    mediaQuery: '(min-width: 0px)'
+    source: responsive_image_test_module
+    sourceType: module
+    weight: 0
+    multipliers:
+      1x: 1x
+      2x: 2x
+    status: true
+    langcode: en
+  module.responsive_image_test_module.narrow:
+    id: module.responsive_image_test_module.narrow
+    name: narrow
+    label: narrow
+    mediaQuery: '(min-width: 560px)'
+    source: responsive_image_test_module
+    sourceType: module
+    weight: 1
+    multipliers:
+      1x: 1x
+      2x: 2x
+    status: true
+    langcode: en
+  module.responsive_image_test_module.wide:
+    id: module.responsive_image_test_module.wide
+    name: wide
+    label: wide
+    mediaQuery: '(min-width: 851px)'
+    source: responsive_image_test_module
+    sourceType: module
+    weight: 2
+    multipliers:
+      1x: 1x
+      2x: 2x
+    status: true
+    langcode: en
+  module.responsive_image_test_module.none:
+    id: module.responsive_image_test_module.none
+    name: mobile
+    label: mobile
+    mediaQuery: ''
+    source: responsive_image_test_module
+    sourceType: module
+    weight: 3
+    multipliers:
+      1x: 1x
+      2x: 2x
+    status: true
+    langcode: en
