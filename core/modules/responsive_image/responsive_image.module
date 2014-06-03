@@ -247,7 +247,9 @@ function theme_responsive_image($variables) {
 
   if (!empty($sources)) {
     $output[] = '<picture>';
+    $output[] = '<!--[if IE 9]><video style="display: none;"><![endif]-->';
     $output = array_merge($output, array_map('drupal_render', $sources));
+    $output[] = '<!--[if IE 9]></video><![endif]-->';
     // Output the fallback image.
     $fallback_image_style = entity_load('image_style', $variables['style_name']);
     $dimensions = array('width' => $image->getWidth(), 'height' => $image->getHeight());

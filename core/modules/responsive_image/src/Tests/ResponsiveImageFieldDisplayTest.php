@@ -230,6 +230,9 @@ class ResponsiveImageFieldDisplayTest extends ImageFieldTestBase {
 
     // Output should contain all image styles and all breakpoints.
     $this->drupalGet('node/' . $nid);
+    // Make sure the IE9 workaround is present.
+    $this->assertRaw('<!--[if IE 9]><video style="display: none;"><![endif]-->');
+    $this->assertRaw('<!--[if IE 9]></video><![endif]-->');
     $this->assertRaw('/styles/thumbnail/');
     $this->assertRaw('/styles/medium/');
     $this->assertRaw('/styles/large/');
