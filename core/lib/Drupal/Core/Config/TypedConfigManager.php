@@ -85,9 +85,7 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
   }
 
   /**
-   * Overrides \Drupal\Core\TypedData\TypedDataManager::create()
-   *
-   * Fills in default type and does variable replacement.
+   * {@inheritdoc}
    */
   public function create(array $definition, $value = NULL, $name = NULL, $parent = NULL) {
     if (!isset($definition['type'])) {
@@ -106,7 +104,11 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
       $definition['type'] = $this->replaceName($definition['type'], $replace);
     }
     // Create typed config object.
-    $wrapper = $this->createInstance($definition['type'], $definition, $name, $parent);
+    $wrapper = $this->createInstance($definition['type'], array(
+      'data_definition' => $definition,
+      'name' => $name,
+      'parent' => $parent,
+    ));
     if (isset($value)) {
       $wrapper->setValue($value, FALSE);
     }
@@ -114,35 +116,38 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
   }
 
   /**
-   * Overrides Drupal\Core\TypedData\TypedDataFactory::createInstance().
+   * {@inheritdoc}
    */
-  public function createInstance($plugin_id, array $configuration = array(), $name = NULL, $parent = NULL) {
-    $type_definition = $this->getDefinition($plugin_id);
+  public function createInstance($data_type, array $configuration = array()) {
+    $data_definition = $configuration['data_definition'];
+    $type_definition = $this->getDefinition($data_type);
+
     if (!isset($type_definition)) {
-      throw new \InvalidArgumentException(String::format('Invalid data type %plugin_id has been given.', array('%plugin_id' => $plugin_id)));
+      throw new \InvalidArgumentException(String::format('Invalid data type %plugin_id has been given.', array('%plugin_id' => $data_type)));
     }
 
-    $configuration += $type_definition;
     // Allow per-data definition overrides of the used classes, i.e. take over
-    // classes specified in the data definition.
-    $key = empty($configuration['list']) ? 'class' : 'list class';
-    if (isset($configuration[$key])) {
-      $class = $configuration[$key];
+    // classes specified in the type definition.
+    $data_definition += $type_definition;
+
+    $key = empty($data_definition['list']) ? 'class' : 'list class';
+    if (isset($data_definition[$key])) {
+      $class = $data_definition[$key];
     }
     elseif (isset($type_definition[$key])) {
       $class = $type_definition[$key];
     }
 
     if (!isset($class)) {
-      throw new PluginException(sprintf('The plugin (%s) did not specify an instance class.', $plugin_id));
+      throw new PluginException(sprintf('The plugin (%s) did not specify an instance class.', $data_type));
     }
-    return new $class($configuration, $name, $parent);
+    return new $class($data_definition, $configuration['name'], $configuration['parent']);
   }
 
   /**
-   * Implements Drupal\Component\Plugin\Discovery\DiscoveryInterface::getDefinition().
+   * {@inheritdoc}
    */
-  public function getDefinition($base_plugin_id) {
+  public function getDefinition($base_plugin_id, $exception_on_invalid = TRUE) {
     $definitions = $this->getDefinitions();
     if (isset($definitions[$base_plugin_id])) {
       $type = $base_plugin_id;
@@ -152,14 +157,13 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
       $type = $name;
     }
     else {
-      // If we don't have definition, return the 'default' element.
-      // This should map to 'undefined' type by default, unless overridden.
-      $type = 'default';
+      // If we don't have definition, return the 'undefined' element.
+      $type = 'undefined';
     }
     $definition = $definitions[$type];
     // Check whether this type is an extension of another one and compile it.
     if (isset($definition['type'])) {
-      $merge = $this->getDefinition($definition['type']);
+      $merge = $this->getDefinition($definition['type'], $exception_on_invalid);
       $definition = NestedArray::mergeDeep($merge, $definition);
       // Unset type so we try the merge only once per type.
       unset($definition['type']);
@@ -287,6 +291,8 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
    *
    * @param string $value
    *   Variable value to be replaced.
+   * @param mixed $data
+   *   Configuration data for the element.
    *
    * @return string
    *   The replaced value if a replacement found or the original value if not.
@@ -326,10 +332,9 @@ class TypedConfigManager extends PluginManagerBase implements TypedConfigManager
    * {@inheritdoc}
    */
   public function hasConfigSchema($name) {
-    // The schema system falls back on the Property class for unknown types.
-    // See http://drupal.org/node/1905230
+    // The schema system falls back on the Undefined class for unknown types.
     $definition = $this->getDefinition($name);
-    return is_array($definition) && ($definition['class'] != '\Drupal\Core\Config\Schema\Property');
+    return is_array($definition) && ($definition['class'] != '\Drupal\Core\Config\Schema\Undefined');
   }
 
 }
