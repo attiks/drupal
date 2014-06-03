@@ -8,7 +8,7 @@
 namespace Drupal\Core\Entity;
 
 use Drupal\Component\Utility\String;
-use Drupal\Core\Field\PrepareCacheInterface;
+use Drupal\Core\Cache\Cache;
 use Drupal\field\FieldConfigInterface;
 use Drupal\field\FieldInstanceConfigInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -150,22 +150,12 @@ abstract class ContentEntityStorageBase extends EntityStorageBase implements Fie
             $translation = $entity->getTranslation($langcode);
             foreach ($translation as $field_name => $items) {
               if ($items->getFieldDefinition() instanceof FieldInstanceConfigInterface && !$items->isEmpty()) {
-                foreach ($items as $delta => $item) {
-                  // If the field item needs to prepare the cache data, call the
-                  // corresponding method, otherwise use the values as cache
-                  // data.
-                  if ($item instanceof PrepareCacheInterface) {
-                    $data[$langcode][$field_name][$delta] = $item->getCacheData();
-                  }
-                  else {
-                    $data[$langcode][$field_name][$delta] = $item->getValue();
-                  }
-                }
+                $data[$langcode][$field_name] = $items->getValue();
               }
             }
           }
           $cid = "field:{$this->entityTypeId}:$id";
-          \Drupal::cache('entity')->set($cid, $data);
+          \Drupal::cache('entity')->set($cid, $data, Cache::PERMANENT, array('entity_field_info' => TRUE));
         }
       }
     }

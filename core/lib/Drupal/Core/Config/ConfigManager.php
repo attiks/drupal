@@ -11,12 +11,15 @@ use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Config\Entity\ConfigDependencyManager;
 use Drupal\Core\Entity\EntityManagerInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationManager;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
  * The ConfigManager provides helper functions for the configuration system.
  */
 class ConfigManager implements ConfigManagerInterface {
+  use StringTranslationTrait;
 
   /**
    * The entity manager.
@@ -35,16 +38,9 @@ class ConfigManager implements ConfigManagerInterface {
   /**
    * The typed config manager.
    *
-   * @var \Drupal\Core\Config\TypedConfigManager
+   * @var \Drupal\Core\Config\TypedConfigManagerInterface
    */
   protected $typedConfigManager;
-
-  /**
-   * The string translation service.
-   *
-   * @var \Drupal\Core\StringTranslation\TranslationManager
-   */
-  protected $stringTranslation;
 
   /**
    * The active configuration storage.
@@ -54,23 +50,49 @@ class ConfigManager implements ConfigManagerInterface {
   protected $activeStorage;
 
   /**
+   * The event dispatcher.
+   *
+   * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+   */
+  protected $eventDispatcher;
+
+  /**
+   * The configuration collection info.
+   *
+   * @var \Drupal\Core\Config\ConfigCollectionInfo
+   */
+  protected $configCollectionInfo;
+
+  /**
+   * The configuration storages keyed by collection name.
+   *
+   * @var \Drupal\Core\Config\StorageInterface[]
+   */
+  protected $storages;
+
+  /**
    * Creates ConfigManager objects.
    *
    * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
    *   The entity manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
    *   The configuration factory.
-   * @param \Drupal\Core\Config\TypedConfigManager $typed_config_manager
+   * @param \Drupal\Core\Config\TypedConfigManagerInterface $typed_config_manager
    *   The typed config manager.
    * @param \Drupal\Core\StringTranslation\TranslationManager $string_translation
    *   The string translation service.
+   * @param \Drupal\Core\Config\StorageInterface $active_storage
+   *   The active configuration storage.
+   * @param \Symfony\Component\EventDispatcher\EventDispatcherInterface $event_dispatcher
+   *   The event dispatcher.
    */
-  public function __construct(EntityManagerInterface $entity_manager, ConfigFactoryInterface $config_factory, TypedConfigManager $typed_config_manager, TranslationManager $string_translation, StorageInterface $active_storage) {
+  public function __construct(EntityManagerInterface $entity_manager, ConfigFactoryInterface $config_factory, TypedConfigManagerInterface $typed_config_manager, TranslationManager $string_translation, StorageInterface $active_storage, EventDispatcherInterface $event_dispatcher) {
     $this->entityManager = $entity_manager;
     $this->configFactory = $config_factory;
     $this->typedConfigManager = $typed_config_manager;
     $this->stringTranslation = $string_translation;
     $this->activeStorage = $active_storage;
+    $this->eventDispatcher = $event_dispatcher;
   }
 
   /**
@@ -121,11 +143,11 @@ class ConfigManager implements ConfigManagerInterface {
     // Check for new or removed files.
     if ($source_data === array('false')) {
       // Added file.
-      $source_data = array($this->stringTranslation->translate('File added'));
+      $source_data = array($this->t('File added'));
     }
     if ($target_data === array('false')) {
       // Deleted file.
-      $target_data = array($this->stringTranslation->translate('File removed'));
+      $target_data = array($this->t('File removed'));
     }
 
     return new \Diff($source_data, $target_data);
@@ -246,4 +268,16 @@ class ConfigManager implements ConfigManagerInterface {
   public function supportsConfigurationEntities($collection) {
     return $collection == StorageInterface::DEFAULT_COLLECTION;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getConfigCollectionInfo() {
+    if (!isset($this->configCollectionInfo)) {
+      $this->configCollectionInfo = new ConfigCollectionInfo();
+      $this->eventDispatcher->dispatch(ConfigEvents::COLLECTION_INFO, $this->configCollectionInfo);
+    }
+    return $this->configCollectionInfo;
+  }
+
 }

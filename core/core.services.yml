@@ -9,7 +9,7 @@ services:
     arguments: ['@service_container', '%cache_contexts%' ]
   cache_context.url:
     class: Drupal\Core\Cache\UrlCacheContext
-    arguments: ['@request']
+    arguments: ['@request_stack']
     tags:
       - { name: cache.context}
   cache_context.language:
@@ -19,7 +19,7 @@ services:
       - { name: cache.context}
   cache_context.theme:
     class: Drupal\Core\Cache\ThemeCacheContext
-    arguments: ['@request', '@theme.negotiator']
+    arguments: ['@request_stack', '@theme.negotiator']
     tags:
       - { name: cache.context}
   cache.backend.database:
@@ -77,7 +77,7 @@ services:
     arguments: [discovery]
   config.manager:
     class: Drupal\Core\Config\ConfigManager
-    arguments: ['@entity.manager', '@config.factory', '@config.typed', '@string_translation', '@config.storage']
+    arguments: ['@entity.manager', '@config.factory', '@config.typed', '@string_translation', '@config.storage', '@event_dispatcher']
   config.factory:
     class: Drupal\Core\Config\ConfigFactory
     tags:
@@ -121,7 +121,7 @@ services:
     arguments: [default]
   form_builder:
     class: Drupal\Core\Form\FormBuilder
-    arguments: ['@form_validator', '@form_submitter', '@module_handler', '@keyvalue.expirable', '@event_dispatcher', '@request_stack', '@?csrf_token', '@?http_kernel']
+    arguments: ['@form_validator', '@form_submitter', '@module_handler', '@keyvalue.expirable', '@event_dispatcher', '@request_stack', '@class_resolver', '@?csrf_token', '@?http_kernel']
   form_validator:
     class: Drupal\Core\Form\FormValidator
     arguments: ['@request_stack', '@string_translation', '@csrf_token']
@@ -142,6 +142,18 @@ services:
     arguments: ['@serialization.phpserialize', '@database']
     tags:
       - { name: needs_destruction }
+  logger.factory:
+    class: Drupal\Core\Logger\LoggerChannelFactory
+    parent: container.trait
+    tags:
+      - { name: service_collector, tag: logger, call: addLogger }
+  logger.channel.default:
+    class: Drupal\Core\Logger\LoggerChannel
+    factory_method: get
+    factory_service: logger.factory
+    arguments: ['system']
+  logger.log_message_parser:
+    class: Drupal\Core\Logger\LogMessageParser
 
   serialization.json:
     class: Drupal\Component\Serialization\Json
@@ -172,7 +184,7 @@ services:
     arguments: [path_alias_whitelist, '@cache.default', '@lock', '@state', '@path.alias_storage']
   path.alias_manager:
     class: Drupal\Core\Path\AliasManager
-    arguments: ['@path.alias_storage', '@path.alias_whitelist', '@language_manager']
+    arguments: ['@path.alias_storage', '@path.alias_whitelist', '@language_manager', '@cache.data']
   http_client:
     class: Drupal\Core\Http\Client
     tags:
@@ -212,7 +224,7 @@ services:
     arguments: ['@config.factory', '@module_handler', '@state', '@info_parser', '@config.installer', '@router.builder']
   entity.manager:
     class: Drupal\Core\Entity\EntityManager
-    arguments: ['@container.namespaces', '@module_handler', '@cache.discovery', '@language_manager', '@string_translation']
+    arguments: ['@container.namespaces', '@module_handler', '@cache.discovery', '@language_manager', '@string_translation', '@class_resolver', '@typed_data_manager']
     parent: container.trait
     tags:
       - { name: plugin_manager_cache_clear }
@@ -258,7 +270,11 @@ services:
     arguments: ['@service_container']
   controller_resolver:
     class: Drupal\Core\Controller\ControllerResolver
-    parent: container.trait
+    arguments: ['@class_resolver', '@logger.channel.default']
+  class_resolver:
+    class: Drupal\Core\DependencyInjection\ClassResolver
+    calls:
+      - [setContainer, ['@service_container']]
   title_resolver:
     class: Drupal\Core\Controller\TitleResolver
     arguments: ['@controller_resolver', '@string_translation']
@@ -330,7 +346,7 @@ services:
       - { name: service_collector, tag: route_filter, call: addRouteFilter }
   url_generator:
     class: Drupal\Core\Routing\UrlGenerator
-    arguments: ['@router.route_provider', '@path_processor_manager', '@route_processor_manager', '@config.factory', '@settings']
+    arguments: ['@router.route_provider', '@path_processor_manager', '@route_processor_manager', '@config.factory', '@settings', '@logger.channel.default']
     calls:
       - [setRequest, ['@?request']]
       - [setContext, ['@?router.request_context']]
@@ -377,9 +393,6 @@ services:
     arguments: ['@router.builder', '@lock']
     tags:
       - { name: event_subscriber }
-  path.alias_manager.cached:
-    class: Drupal\Core\CacheDecorator\AliasManagerCacheDecorator
-    arguments: ['@path.alias_manager', '@cache.data']
   path.alias_storage:
     class: Drupal\Core\Path\AliasStorage
     arguments: ['@database', '@module_handler']
@@ -463,7 +476,7 @@ services:
       - { name: event_subscriber }
   route_content_form_controller_subscriber:
     class: Drupal\Core\EventSubscriber\ContentFormControllerSubscriber
-    arguments: ['@controller_resolver', '@form_builder']
+    arguments: ['@class_resolver', '@controller_resolver', '@form_builder']
     parent: container.trait
     tags:
       - { name: event_subscriber }
@@ -483,7 +496,7 @@ services:
     arguments: ['@controller_resolver', '@ajax_response_renderer']
   controller.entityform:
     class: Drupal\Core\Entity\HtmlEntityFormController
-    arguments: ['@controller_resolver', '@service_container', '@entity.manager']
+    arguments: ['@class_resolver', '@controller_resolver', '@service_container', '@entity.manager']
   controller.dialog:
     class: Drupal\Core\Controller\DialogController
     arguments: ['@controller_resolver', '@title_resolver']
@@ -566,13 +579,14 @@ services:
     arguments: ['@csrf_token']
   maintenance_mode_subscriber:
     class: Drupal\Core\EventSubscriber\MaintenanceModeSubscriber
+    arguments: ['@state', '@config.factory', '@string_translation', '@url_generator', '@current_user']
     tags:
       - { name: event_subscriber }
   path_subscriber:
     class: Drupal\Core\EventSubscriber\PathSubscriber
     tags:
       - { name: event_subscriber }
-    arguments: ['@path.alias_manager.cached', '@path_processor_manager']
+    arguments: ['@path.alias_manager', '@path_processor_manager']
   legacy_request_subscriber:
     class: Drupal\Core\EventSubscriber\LegacyRequestSubscriber
     tags:
@@ -752,11 +766,6 @@ services:
       - { name: needs_destruction }
   authentication:
     class: Drupal\Core\Authentication\AuthenticationManager
-  authentication.cookie:
-    class: Drupal\Core\Authentication\Provider\Cookie
-    arguments: ['@session_manager']
-    tags:
-      - { name: authentication_provider, priority: 0 }
   authentication_subscriber:
     class: Drupal\Core\EventSubscriber\AuthenticationSubscriber
     tags:
